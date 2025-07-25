@@ -1,0 +1,25 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    {# 店かレビューかによって表示を切り替える #}
+    {% if object.name %}
+        <h1>「{{ object.name }}」を本当に削除しますか？</h1>
+    {% else %}
+        <h1>このレビューを本当に削除しますか？</h1>
+        <p>評価: {{ object.rating }}, コメント: {{ object.comment }}</p>
+    {% endif %}
+    
+    <p>この操作は元に戻せません。</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" style="background-color: red; color: white;">削除する</button>
+        
+        {# キャンセルボタン #}
+        {% if object.store.id %}
+            <a href="{% url 'store_detail' object.store.id %}">キャンセル</a>
+        {% else %}
+            <a href="{% url 'store_list' %}">キャンセル</a>
+        {% endif %}
+    </form>
+{% endblock %}

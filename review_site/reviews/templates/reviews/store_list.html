@@ -1,0 +1,43 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    <h1>お店一覧</h1>
+
+    <div class="search-form">
+        <form method="get" action="{% url 'store_list' %}">
+            <input type="text" name="q" class="search-input" placeholder="店名や住所で検索..." value="{{ query|default_if_none:'' }}">
+            <button type="submit" class="search-button">検索</button>
+        </form>
+    </div>
+    <hr>
+
+    {% for store in stores %}
+        <div class="store-card" style="display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+            
+            {# --- ここからが画像表示部分 --- #}
+            {% if store.image %}
+                <img src="{{ store.image.url }}" alt="{{ store.name }}の画像" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
+            {% else %}
+                {# 画像がない場合の表示 #}
+                <div style="width: 150px; height: 150px; background-color: #e8e8e8; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #aaa; margin-right: 20px;">
+                    <span>画像なし</span>
+                </div>
+            {% endif %}
+            {# --- ここまでが画像表示部分 --- #}
+
+            {# --- お店の情報表示 --- #}
+            <div>
+                <h2><a href="{% url 'store_detail' store.id %}">{{ store.name }}</a></h2>
+                <p>住所: {{ store.address }}</p>
+                <p>登録者: {{ store.created_by.username }}</p>
+            </div>
+
+        </div>
+    {% empty %}
+        {% if query %}
+            <p style="text-align: center;">「{{ query }}」に一致するお店は見つかりませんでした。</p>
+        {% else %}
+            <p style="text-align: center;">まだ登録されているお店がありません。</p>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

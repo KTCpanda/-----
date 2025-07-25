@@ -1,0 +1,16 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    <div style="display: flex; align-items: center; justify-content: center; min-height: 70vh; text-align: center;">
+        <div style="font-size: 1.2rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 30px;">お店を登録する</h1>
+            
+            {# ↓↓ formタグに enctype を追加 ↓↓ #}
+            <form method="post" enctype="multipart/form-data" style="display: inline-block;">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" style="font-size: 1rem; padding: 10px 20px; margin-top: 10px;">登録する</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

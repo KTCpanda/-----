@@ -1,0 +1,37 @@
+{% load static %} 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-g">
+    <title>レビューサイト</title>
+     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+     
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="{% url 'store_list' %}" class="nav-link">ホーム</a> | 
+            {% if user.is_authenticated %}
+                <span>こんにちは! {{ user.username }}さん</span> | 
+                <a href="{% url 'store_new' %}" class="nav-link">お店を登録</a>
+        </div>
+        <div class="nav-right">
+                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">
+                        ログアウト
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="nav-link">ログイン</a> | 
+                <a href="{% url 'signup' %}" class="nav-link">ユーザー登録</a>
+            {% endif %}
+        </div>
+    </nav>
+    <hr>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

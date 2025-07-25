@@ -1,0 +1,129 @@
+/* static/css/style.css */
+
+body {
+    background-color: #f8f9fa; 
+    color: #212529;           
+    font-family: sans-serif;  /* フォントを指定 */
+    line-height: 1.6;         /* 行間を広げる */
+}
+
+h1, h2 {
+    color: #343a40;
+}
+
+a {
+    color: #0d6efd;           
+    text-decoration: none;    
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px; /* ボタンの角を丸くする */
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0b5ed7;
+}
+
+form p {
+    margin: 15px 0;
+}
+
+.search-form {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.search-input {
+    width: 50%;
+    padding: 10px 15px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+}
+
+.search-button {
+    padding: 10px 20px;
+    border-radius: 25px; 
+}
+
+.delete-button {
+    background-color: #dc3545; 
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s; /* ホバー時のアニメーション */
+}
+
+.delete-button:hover {
+    background-color: #c82333; /* マウスを乗せたら少し濃い赤に */
+}
+
+
+.rating-label {
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: white;
+    display: inline-block; /* 背景色がつくように */
+}
+
+.rating-5 { background-color: #ffc107; } /* 最高: ゴールド */
+.rating-4 { background-color: #28a745; } /* おすすめ: 緑 */
+.rating-3 { background-color: #17a2b8; } /* まあまあ: 青緑 */
+.rating-2 { background-color: #6c757d; } /* うーん…: グレー */
+.rating-1 { background-color: #dc3545; } /* イマイチ: 赤 */
+
+/* ナビゲーションバー */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+}
+
+.nav-link {
+    color: #0d6efd;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #0d6efd;
+    color: #fff;
+    text-decoration: none;
+}
+
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}

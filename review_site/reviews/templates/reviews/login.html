@@ -1,0 +1,12 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+     <div style="display: flex; align-items: center; justify-content: center; min-height: 70vh; text-align: center;">
+        <div style="font-size: 1.2rem;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 30px;">ログイン</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">ログイン</button>
+    </form>
+{% endblock %}

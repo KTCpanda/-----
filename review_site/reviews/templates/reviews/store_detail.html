@@ -1,0 +1,70 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    <h1>{{ store.name }}</h1>
+    <p>住所: {{ store.address }}</p>
+    
+    {% if store.image %}
+        <img src="{{ store.image.url }}" alt="{{ store.name }}の画像" style="max-width: 400px; height: auto; margin-top: 15px; border-radius: 8px;">
+    {% endif %}
+
+    <p style="margin-top: 15px;">登録者: {{ store.created_by.username }}</p>
+    
+    {% if user == store.created_by %}
+        <form action="{% url 'store_delete' store.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="delete-button">この店を削除する</button>
+        </form>
+    {% endif %}
+
+    <hr style="margin: 30px 0;">
+
+    {# --- レビュー投稿フォーム --- #}
+    <h2>レビュー投稿</h2>
+    {% if user.is_authenticated %}
+        <form method="post">
+            {% csrf_token %}
+            
+            {# フォームの表示をカスタマイズ #}
+            <p>評価:</p>
+            <div class="rating-form">
+                {% for radio in form.rating %}
+                <label style="margin-right: 15px;">{{ radio.tag }} {{ radio.choice_label }}</label>
+                {% endfor %}
+            </div>
+            
+            <p style="margin-top: 15px;">
+                {{ form.comment.label_tag }}<br>
+                {{ form.comment }}
+            </p>
+
+            <button type="submit">投稿する</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}">ログイン</a>してレビューを投稿してください。</p>
+    {% endif %}
+
+    <hr style="margin: 30px 0;">
+
+    {# --- レビュー一覧＆削除機能 --- #}
+    <h2>レビュー一覧</h2>
+    {% for review in store.reviews.all %}
+        <div class="review-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
+            {# ↓↓ get_rating_display と class を適用 ↓↓ #}
+            <p><strong>評価: <span class="rating-label rating-{{ review.rating }}">{{ review.get_rating_display }}</span></strong></p>
+            <p>{{ review.comment }}</p>
+            <p style="display: flex; justify-content: space-between; align-items: center;">
+                <small>投稿者: {{ review.user.username }} ({{ review.created_at|date:"Y/m/d" }})</small>
+                
+                {% if user == review.user %}
+                    <form action="{% url 'review_delete' review.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="delete-button">削除</button>
+                    </form>
+                {% endif %}
+            </p>
+        </div>
+    {% empty %}
+        <p>レビューはまだありません。</p>
+    {% endfor %}
+{% endblock %}
