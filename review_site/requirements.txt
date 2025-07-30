@@ -1,0 +1,7 @@
+Django
+gunicorn
+dj-database-core
+psycopg2-binary
+whitenoise
+requests
+Pillow
