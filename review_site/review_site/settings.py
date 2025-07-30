@@ -59,14 +59,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'review_site.wsgi.application'
 
+
 # --- データベース設定 ---
-# RenderのPostgreSQLデータベースに接続
+# ★★★ この部分を修正しました ★★★
+# Renderの環境変数 DATABASE_URL を読み込むように設定
+# ローカルPCで動かす場合は、下の default=... にNeonのURLを直接貼り付けてください
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default='postgresql://neondb_owner:npg_Ooz6WRSd8msU@ep-empty-grass-a1gzqy7k-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
         conn_max_age=600
     )
 }
+
 
 # --- パスワード検証 ---
 AUTH_PASSWORD_VALIDATORS = [
