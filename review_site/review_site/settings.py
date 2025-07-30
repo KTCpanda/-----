@@ -61,9 +61,6 @@ WSGI_APPLICATION = 'review_site.wsgi.application'
 
 
 # --- データベース設定 ---
-# ★★★ この部分を修正しました ★★★
-# Renderの環境変数 DATABASE_URL を読み込むように設定
-# ローカルPCで動かす場合は、下の default=... にNeonのURLを直接貼り付けてください
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://neondb_owner:npg_Ooz6WRSd8msU@ep-empty-grass-a1gzqy7k-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
@@ -88,13 +85,15 @@ USE_TZ = True
 
 # --- 静的ファイル (CSS, JavaScript) の設定 ---
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# ★★★ この行を修正しました ★★★
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = BASE_DIR / 'staticfiles' # collectstaticの出力先
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- メディアファイル (画像アップロード) の設定 ---
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ★★★ この行を修正しました ★★★
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
