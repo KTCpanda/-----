@@ -1,16 +1,23 @@
 from pathlib import Path
 import os
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from dotenv import load_dotenv
+
+# .envファイルを読み込む
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- 本番環境用の設定 ---
-# SECRET_KEYはRenderの環境変数から読み込む
+# SECRET_KEYは環境変数から読み込む
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-2j#d1(m91f@8z05j^h(%=b*hr7$a8ow_28-#99!exvd*awir@g')
 
-# DEBUGモードはRenderでは無効にする（ローカル開発時は一時的にTrue）
-DEBUG = True  # ローカル開発時は一時的にTrue
+# DEBUGモードは環境変数から読み込む
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 # Renderのドメインを許可（ローカル開発時も含む）
 ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
@@ -25,6 +32,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'reviews',
     'whitenoise.runserver_nostatic', # WhiteNoiseを追加
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 # --- ミドルウェア設定 ---
@@ -63,7 +72,7 @@ WSGI_APPLICATION = 'review_site.wsgi.application'
 # --- データベース設定 ---
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://neondb_owner:npg_Ooz6WRSd8msU@ep-empty-grass-a1gzqy7k-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+        default=os.environ.get('DATABASE_URL'),
         conn_max_age=600
     )
 }
@@ -91,9 +100,17 @@ STATIC_ROOT = BASE_DIR / 'staticfiles' # collectstaticの出力先
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- メディアファイル (画像アップロード) の設定 ---
+# Cloudinary設定
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
+)
+
+# メディアファイルはCloudinaryを使用
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
-# ★★★ この行を修正しました ★★★
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
