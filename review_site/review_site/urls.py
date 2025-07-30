@@ -10,5 +10,4 @@ urlpatterns = [
 
 # 開発環境でメディアファイル（アップロードされた画像）を提供するための設定
 if settings.DEBUG:
-    # ↓↓ ここの変数名を修正しました ↓↓
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
