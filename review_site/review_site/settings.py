@@ -9,11 +9,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET_KEYはRenderの環境変数から読み込む
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-2j#d1(m91f@8z05j^h(%=b*hr7$a8ow_28-#99!exvd*awir@g')
 
-# DEBUGモードはRenderでは無効にする
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+# DEBUGモードはRenderでは無効にする（ローカル開発時は一時的にTrue）
+DEBUG = True  # ローカル開発時は一時的にTrue
 
-# Renderのドメインを許可
-ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1']
+# Renderのドメインを許可（ローカル開発時も含む）
+ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
 
 # --- アプリケーション定義 ---
 INSTALLED_APPS = [
