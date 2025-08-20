@@ -11,21 +11,18 @@
     </div>
     <hr>
 
+    {# --- あなたのデータベースの検索結果 --- #}
     {% for store in stores %}
         <div class="store-card" style="display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
             
-            {# --- ここからが画像表示部分 --- #}
             {% if store.image %}
                 <img src="{{ store.image.url }}" alt="{{ store.name }}の画像" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
             {% else %}
-                {# 画像がない場合の表示 #}
                 <div style="width: 150px; height: 150px; background-color: #e8e8e8; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #aaa; margin-right: 20px;">
                     <span>画像なし</span>
                 </div>
             {% endif %}
-            {# --- ここまでが画像表示部分 --- #}
-
-            {# --- お店の情報表示 --- #}
+            
             <div>
                 <h2><a href="{% url 'store_detail' store.id %}">{{ store.name }}</a></h2>
                 <p>住所: {{ store.address }}</p>
@@ -33,11 +30,34 @@
             </div>
 
         </div>
-    {% empty %}
+    {% endfor %}
+
+    {# --- ここからホットペッパーAPIの検索結果を追加 --- #}
+    {% if api_stores %}
+        <h2 style="margin-top: 40px;">ホットペッパーの検索結果</h2>
+        {% for store in api_stores %}
+            <div class="store-card" style="display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                
+                <img src="{{ store.photo.pc.m }}" alt="{{ store.name }}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
+                
+                <div>
+                    <h2>{{ store.name }} ({{ store.station_name }})</h2>
+                    <p>住所: {{ store.address }}</p>
+                    <p>ジャンル: {{ store.genre.name }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {# --- ここまでAPIの検索結果 --- #}
+
+
+    {# --- 検索結果が0件だった場合の表示 --- #}
+    {% if not stores and not api_stores %}
         {% if query %}
             <p style="text-align: center;">「{{ query }}」に一致するお店は見つかりませんでした。</p>
         {% else %}
             <p style="text-align: center;">まだ登録されているお店がありません。</p>
         {% endif %}
-    {% endfor %}
+    {% endif %}
+
 {% endblock %}
