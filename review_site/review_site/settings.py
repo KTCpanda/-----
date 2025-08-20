@@ -108,9 +108,9 @@ cloudinary.config(
     secure=True
 )
 
-# メディアファイルはCloudinaryを使用
+# ★★★ この2行がCloudinaryへの切り替えスイッチです ★★★
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '/media/'
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
