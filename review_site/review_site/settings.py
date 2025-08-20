@@ -23,6 +23,7 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
 
 # --- アプリケーション定義 ---
+# ★★★ INSTALLED_APPSの順番を修正 ★★★
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -30,9 +31,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage', # staticfilesより前に置く
     'reviews',
-    'whitenoise.runserver_nostatic', # WhiteNoiseを追加
-    'cloudinary_storage',
     'cloudinary',
 ]
 
