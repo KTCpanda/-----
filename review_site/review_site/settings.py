@@ -1,18 +1,25 @@
 from pathlib import Path
 import os
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 from dotenv import load_dotenv
 
 # .envファイルを読み込む
 load_dotenv()
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- 基本設定 ---
-# SECRET_KEYとDEBUGは.envまたはRenderの環境変数から読み込む
-SECRET_KEY = os.environ.get('SECRET_KEY')
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+# --- 本番環境用の設定 ---
+# SECRET_KEYは環境変数から読み込む
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-2j#d1(m91f@8z05j^h(%=b*hr7$a8ow_28-#99!exvd*awir@g')
 
+# DEBUGモードは環境変数から読み込む
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+
+# Renderのドメインを許可（ローカル開発時も含む）
 ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
 
 # --- アプリケーション定義 ---
@@ -22,17 +29,17 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # staticfilesより前に置く
     'django.contrib.staticfiles',
     'reviews',
-    'cloudinary_storage', # Cloudinaryストレージ
-    'cloudinary',         # Cloudinary本体
+    'whitenoise.runserver_nostatic', # WhiteNoiseを追加
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 # --- ミドルウェア設定 ---
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # WhiteNoiseを一番上に近い位置に追加
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -42,6 +49,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'review_site.urls'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -57,7 +65,9 @@ TEMPLATES = [
         },
     },
 ]
+
 WSGI_APPLICATION = 'review_site.wsgi.application'
+
 
 # --- データベース設定 ---
 DATABASES = {
@@ -66,6 +76,7 @@ DATABASES = {
         conn_max_age=600
     )
 }
+
 
 # --- パスワード検証 ---
 AUTH_PASSWORD_VALIDATORS = [
@@ -83,15 +94,23 @@ USE_TZ = True
 
 # --- 静的ファイル (CSS, JavaScript) の設定 ---
 STATIC_URL = 'static/'
+# ★★★ この行を修正しました ★★★
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # collectstaticの出力先
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# --- メディアファイル (Cloudinary) の設定 ---
-# ★★★ この2行だけでOK ★★★
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+# --- メディアファイル (画像アップロード) の設定 ---
+# Cloudinary設定
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
+)
 
+# メディアファイルはCloudinaryを使用
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -101,5 +120,5 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# --- ホットペッパーAPIキーの設定 ---
+# --- ホットペッパーAPIキーの設定（必要に応じて追加） ---
 HOTPEPPER_API_KEY = os.environ.get('HOTPEPPER_API_KEY', '')
