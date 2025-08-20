@@ -110,6 +110,8 @@ cloudinary.config(
 
 # メディアファイルはCloudinaryを使用
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # デバッグ用：Cloudinary設定を確認
 if DEBUG:
