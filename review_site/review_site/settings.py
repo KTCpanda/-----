@@ -112,6 +112,12 @@ cloudinary.config(
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
 
+# デバッグ用：Cloudinary設定を確認
+if DEBUG:
+    print(f"Cloudinary Cloud Name: {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
+    print(f"Cloudinary API Key: {os.environ.get('CLOUDINARY_API_KEY')}")
+    print(f"Cloudinary API Secret configured: {'Yes' if os.environ.get('CLOUDINARY_API_SECRET') else 'No'}")
+
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
