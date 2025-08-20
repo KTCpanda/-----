@@ -12,6 +12,9 @@ urlpatterns = [
     
     # 店の登録ページ
     path('store/new/', views.store_new, name='store_new'),
+    
+    # 店の編集ページ
+    path('store/<int:store_id>/edit/', views.store_edit, name='store_edit'),
 
     # ユーザー認証
     path('signup/', views.signup, name='signup'),

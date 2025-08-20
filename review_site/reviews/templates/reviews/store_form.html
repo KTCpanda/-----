@@ -3,13 +3,30 @@
 {% block content %}
     <div style="display: flex; align-items: center; justify-content: center; min-height: 70vh; text-align: center;">
         <div style="font-size: 1.2rem;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 30px;">お店を登録する</h1>
+            {% if is_edit %}
+                <h1 style="font-size: 2.5rem; margin-bottom: 30px;">{{ store.name }} の情報を編集</h1>
+            {% else %}
+                <h1 style="font-size: 2.5rem; margin-bottom: 30px;">お店を登録する</h1>
+            {% endif %}
+            
+            {# 編集時は現在の画像を表示 #}
+            {% if is_edit and store.image %}
+                <div style="margin-bottom: 20px;">
+                    <p>現在の画像:</p>
+                    <img src="{{ store.image.url }}" alt="{{ store.name }}の現在の画像" style="max-width: 300px; height: auto; border-radius: 8px;">
+                </div>
+            {% endif %}
             
             {# ↓↓ formタグに enctype を追加 ↓↓ #}
             <form method="post" enctype="multipart/form-data" style="display: inline-block;">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <button type="submit" style="font-size: 1rem; padding: 10px 20px; margin-top: 10px;">登録する</button>
+                {% if is_edit %}
+                    <button type="submit" style="font-size: 1rem; padding: 10px 20px; margin-top: 10px;">更新する</button>
+                    <a href="{% url 'store_detail' store.id %}" style="margin-left: 10px; padding: 10px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">キャンセル</a>
+                {% else %}
+                    <button type="submit" style="font-size: 1rem; padding: 10px 20px; margin-top: 10px;">登録する</button>
+                {% endif %}
             </form>
         </div>
     </div>

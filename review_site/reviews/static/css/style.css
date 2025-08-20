@@ -70,6 +70,22 @@ form p {
     background-color: #c82333; /* マウスを乗せたら少し濃い赤に */
 }
 
+.edit-button {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.edit-button:hover {
+    background-color: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
 
 .rating-label {
     font-weight: bold;

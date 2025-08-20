@@ -71,6 +71,28 @@ def review_delete(request, review_id):
     return redirect('store_detail', store_id=review.store.id)
 
 @login_required
+def store_edit(request, store_id):
+    store = get_object_or_404(Store, id=store_id)
+    
+    # 登録した本人でなければ、店詳細ページにリダイレクト
+    if store.created_by != request.user:
+        return redirect('store_detail', store_id=store.id)
+    
+    if request.method == 'POST':
+        form = StoreForm(request.POST, request.FILES, instance=store)
+        if form.is_valid():
+            form.save()
+            return redirect('store_detail', store_id=store.id)
+    else:
+        form = StoreForm(instance=store)
+    
+    return render(request, 'reviews/store_form.html', {
+        'form': form, 
+        'store': store, 
+        'is_edit': True
+    })
+
+@login_required
 def store_delete(request, store_id):
     store = get_object_or_404(Store, id=store_id)
     
