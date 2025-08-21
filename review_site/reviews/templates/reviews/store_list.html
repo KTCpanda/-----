@@ -15,8 +15,8 @@
     {% for store in stores %}
         <div class="store-card" style="display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
             
-            {% if store.image %}
-                <img src="{{ store.image.url }}" alt="{{ store.name }}の画像" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
+            {% if store.image_data %}
+                <img src="{{ store.get_image_url }}" alt="{{ store.name }}の画像" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
             {% else %}
                 <div style="width: 150px; height: 150px; background-color: #e8e8e8; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #aaa; margin-right: 20px;">
                     <span>画像なし</span>
