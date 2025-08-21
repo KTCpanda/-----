@@ -52,7 +52,7 @@
 
     {# --- レビュー一覧＆削除機能 --- #}
     <h2>レビュー一覧</h2>
-    {% for review in store.reviews.all %}
+    {% for review in reviews %}
         <div class="review-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
             {# ↓↓ get_rating_display と class を適用 ↓↓ #}
             <p><strong>評価: <span class="rating-label rating-{{ review.rating }}">{{ review.get_rating_display }}</span></strong></p>
@@ -60,22 +60,22 @@
             
             {# リアクション機能 #}
             {% if user.is_authenticated %}
-                <div class="reaction-buttons" style="margin: 10px 0;">
-                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'good')" data-review="{{ review.id }}" data-type="good">
-                        👍 <span id="good-count-{{ review.id }}">{{ review.reactions.good.count }}</span>
+                <div class="reaction-buttons" style="margin: 10px 0; display: flex; gap: 8px;">
+                    <button class="reaction-btn" id="good-btn-{{ review.id }}" onclick="addReaction({{ review.id }}, 'good')" data-review="{{ review.id }}" data-type="good">
+                        👍 <span id="good-count-{{ review.id }}">{{ review.good_count }}</span>
                     </button>
-                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'bad')" data-review="{{ review.id }}" data-type="bad">
-                        👎 <span id="bad-count-{{ review.id }}">{{ review.reactions.bad.count }}</span>
+                    <button class="reaction-btn" id="bad-btn-{{ review.id }}" onclick="addReaction({{ review.id }}, 'bad')" data-review="{{ review.id }}" data-type="bad">
+                        👎 <span id="bad-count-{{ review.id }}">{{ review.bad_count }}</span>
                     </button>
-                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'question')" data-review="{{ review.id }}" data-type="question">
-                        ❓ <span id="question-count-{{ review.id }}">{{ review.reactions.question.count }}</span>
+                    <button class="reaction-btn" id="question-btn-{{ review.id }}" onclick="addReaction({{ review.id }}, 'question')" data-review="{{ review.id }}" data-type="question">
+                        ❓ <span id="question-count-{{ review.id }}">{{ review.question_count }}</span>
                     </button>
                 </div>
             {% else %}
-                <div class="reaction-display" style="margin: 10px 0;">
-                    <span>👍 {{ review.reactions.good.count }}</span>
-                    <span>👎 {{ review.reactions.bad.count }}</span>
-                    <span>❓ {{ review.reactions.question.count }}</span>
+                <div class="reaction-display">
+                    <span>👍 {{ review.good_count }}</span>
+                    <span>👎 {{ review.bad_count }}</span>
+                    <span>❓ {{ review.question_count }}</span>
                 </div>
             {% endif %}
             
@@ -107,9 +107,44 @@ function addReaction(reviewId, reactionType) {
     .then(response => response.json())
     .then(data => {
         if (data.reaction_counts) {
+            // カウント更新
             document.getElementById(`good-count-${reviewId}`).textContent = data.reaction_counts.good;
             document.getElementById(`bad-count-${reviewId}`).textContent = data.reaction_counts.bad;
             document.getElementById(`question-count-${reviewId}`).textContent = data.reaction_counts.question;
+            
+            // ボタンのアクティブ状態を更新
+            const goodBtn = document.getElementById(`good-btn-${reviewId}`);
+            const badBtn = document.getElementById(`bad-btn-${reviewId}`);
+            const questionBtn = document.getElementById(`question-btn-${reviewId}`);
+            
+            // 全てのボタンのアクティブ状態をリセット
+            goodBtn.classList.remove('active');
+            badBtn.classList.remove('active');
+            questionBtn.classList.remove('active');
+            
+            // クリックされたボタンにアクティブ状態を追加（削除されていない場合）
+            if (data.action === 'added' || data.action === 'updated') {
+                document.getElementById(`${reactionType}-btn-${reviewId}`).classList.add('active');
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// ページ読み込み時に現在のユーザーのリアクション状態を取得
+document.addEventListener('DOMContentLoaded', function() {
+    // 各レビューの現在のリアクション状態を確認
+    {% for review in reviews %}
+        checkUserReaction({{ review.id }});
+    {% endfor %}
+});
+
+function checkUserReaction(reviewId) {
+    fetch(`/review/${reviewId}/user-reaction/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.user_reaction) {
+            document.getElementById(`${data.user_reaction}-btn-${reviewId}`).classList.add('active');
         }
     })
     .catch(error => console.error('Error:', error));

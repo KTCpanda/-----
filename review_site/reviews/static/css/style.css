@@ -149,27 +149,56 @@ form p {
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
     color: #495057;
-    padding: 5px 10px;
-    margin-right: 5px;
-    border-radius: 15px;
+    padding: 8px 12px;
+    margin-right: 8px;
+    border-radius: 20px;
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 50px;
+    justify-content: center;
 }
 
 .reaction-btn:hover {
     background-color: #e9ecef;
     transform: scale(1.05);
+    border-color: #adb5bd;
 }
 
 .reaction-btn:active {
     transform: scale(0.95);
 }
 
+/* 押された状態のリアクションボタン */
+.reaction-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.reaction-btn.active:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.reaction-display {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+}
+
 .reaction-display span {
-    margin-right: 15px;
-    padding: 5px 10px;
+    padding: 8px 12px;
     background-color: #f8f9fa;
-    border-radius: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
     font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 50px;
+    justify-content: center;
 }

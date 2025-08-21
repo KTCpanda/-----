@@ -35,9 +35,9 @@ def store_detail(request, store_id):
     # 各レビューにリアクション数を追加
     reviews = store.reviews.all()
     for review in reviews:
-        review.reactions_good = review.reactions.filter(reaction_type='good')
-        review.reactions_bad = review.reactions.filter(reaction_type='bad')
-        review.reactions_question = review.reactions.filter(reaction_type='question')
+        review.good_count = review.reactions.filter(reaction_type='good').count()
+        review.bad_count = review.reactions.filter(reaction_type='bad').count()
+        review.question_count = review.reactions.filter(reaction_type='question').count()
     
     return render(request, 'reviews/store_detail.html', {'store': store, 'form': form, 'reviews': reviews})
 
@@ -195,3 +195,14 @@ def add_reaction(request, review_id):
         'action': action,
         'reaction_counts': reaction_counts
     })
+
+@login_required
+def get_user_reaction(request, review_id):
+    """ユーザーの現在のリアクション状態を取得"""
+    review = get_object_or_404(Review, id=review_id)
+    user_reaction = Reaction.objects.filter(review=review, user=request.user).first()
+    
+    if user_reaction:
+        return JsonResponse({'user_reaction': user_reaction.reaction_type})
+    else:
+        return JsonResponse({'user_reaction': None})

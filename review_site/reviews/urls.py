@@ -26,4 +26,5 @@ urlpatterns = [
     
     # リアクション機能
     path('review/<int:review_id>/reaction/', views.add_reaction, name='add_reaction'),
+    path('review/<int:review_id>/user-reaction/', views.get_user_reaction, name='get_user_reaction'),
 ]
