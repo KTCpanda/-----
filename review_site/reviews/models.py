@@ -1,17 +1,26 @@
 # reviews/models.py
 from django.db import models
 from django.contrib.auth.models import User
+import base64
+import io
+from PIL import Image
 
 # ... Storeモデルは変更なし ...
 class Store(models.Model):
     name = models.CharField("店名", max_length=100)
     address = models.CharField("住所", max_length=200)
-    image = models.ImageField("お店の画像", upload_to='store_images/', blank=True, null=True)
+    image_data = models.TextField("お店の画像（Base64）", blank=True, null=True)
     created_by = models.ForeignKey(User, verbose_name="登録者", on_delete=models.CASCADE)
     created_at = models.DateTimeField("登録日", auto_now_add=True)
 
     def __str__(self):
         return self.name
+    
+    def get_image_url(self):
+        """Base64画像データをdata URLとして返す"""
+        if self.image_data:
+            return f"data:image/jpeg;base64,{self.image_data}"
+        return None
 
 # reviews/models.py
 

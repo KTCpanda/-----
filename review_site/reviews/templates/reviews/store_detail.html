@@ -4,8 +4,8 @@
     <h1>{{ store.name }}</h1>
     <p>住所: {{ store.address }}</p>
     
-    {% if store.image %}
-        <img src="{{ store.image.url }}" alt="{{ store.name }}の画像" style="max-width: 400px; height: auto; margin-top: 15px; border-radius: 8px;">
+    {% if store.image_data %}
+        <img src="{{ store.get_image_url }}" alt="{{ store.name }}の画像" style="max-width: 400px; height: auto; margin-top: 15px; border-radius: 8px;">
     {% endif %}
 
     <p style="margin-top: 15px;">登録者: {{ store.created_by.username }}</p>

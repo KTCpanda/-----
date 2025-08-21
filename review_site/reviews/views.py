@@ -4,6 +4,9 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from .models import Store, Review
 from .forms import StoreForm, ReviewForm
+import base64
+import io
+from PIL import Image
 
 # 店一覧
 def store_list(request):
@@ -33,11 +36,25 @@ def store_detail(request, store_id):
 @login_required
 def store_new(request):
     if request.method == 'POST':
-        # ↓↓ この行を修正します ↓↓
         form = StoreForm(request.POST, request.FILES)
         if form.is_valid():
             store = form.save(commit=False)
             store.created_by = request.user
+            
+            # 画像をBase64に変換して保存
+            if form.cleaned_data['image']:
+                image_file = form.cleaned_data['image']
+                # 画像をリサイズ
+                img = Image.open(image_file)
+                img = img.convert('RGB')
+                img.thumbnail((800, 600), Image.Resampling.LANCZOS)
+                
+                # Base64に変換
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=85)
+                image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                store.image_data = image_base64
+            
             store.save()
             return redirect('store_list')
     else:
@@ -79,12 +96,27 @@ def store_edit(request, store_id):
         return redirect('store_detail', store_id=store.id)
     
     if request.method == 'POST':
-        form = StoreForm(request.POST, request.FILES, instance=store)
+        form = StoreForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            store.name = form.cleaned_data['name']
+            store.address = form.cleaned_data['address']
+            
+            # 新しい画像がアップロードされた場合
+            if form.cleaned_data['image']:
+                image_file = form.cleaned_data['image']
+                img = Image.open(image_file)
+                img = img.convert('RGB')
+                img.thumbnail((800, 600), Image.Resampling.LANCZOS)
+                
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=85)
+                image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                store.image_data = image_base64
+            
+            store.save()
             return redirect('store_detail', store_id=store.id)
     else:
-        form = StoreForm(instance=store)
+        form = StoreForm(initial={'name': store.name, 'address': store.address})
     
     return render(request, 'reviews/store_form.html', {
         'form': form, 

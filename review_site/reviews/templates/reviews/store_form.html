@@ -10,10 +10,10 @@
             {% endif %}
             
             {# 編集時は現在の画像を表示 #}
-            {% if is_edit and store.image %}
+            {% if is_edit and store.image_data %}
                 <div style="margin-bottom: 20px;">
                     <p>現在の画像:</p>
-                    <img src="{{ store.image.url }}" alt="{{ store.name }}の現在の画像" style="max-width: 300px; height: auto; border-radius: 8px;">
+                    <img src="{{ store.get_image_url }}" alt="{{ store.name }}の現在の画像" style="max-width: 300px; height: auto; border-radius: 8px;">
                 </div>
             {% endif %}
             

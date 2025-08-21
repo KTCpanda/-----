@@ -100,25 +100,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles' # collectstaticの出力先
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- メディアファイル (画像アップロード) の設定 ---
-# Cloudinary設定
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
-    secure=True
-)
-
-# メディアファイルはCloudinaryを使用
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# デバッグ用：Cloudinary設定を確認
-if DEBUG:
-    print(f"Cloudinary Cloud Name: {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
-    print(f"Cloudinary API Key: {os.environ.get('CLOUDINARY_API_KEY')}")
-    print(f"Cloudinary API Secret configured: {'Yes' if os.environ.get('CLOUDINARY_API_SECRET') else 'No'}")
-
+# 画像はデータベースにBase64形式で保存するため、メディアファイル設定は不要
 
 # --- 主キーの型設定 ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -4,6 +4,8 @@ from .models import Store, Review
 
 # ... StoreFormは変更なし ...
 class StoreForm(forms.ModelForm):
+    image = forms.ImageField(label="お店の画像", required=False)
+    
     class Meta:
         model = Store
         fields = ['name', 'address', 'image']
