@@ -2,7 +2,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .models import Store, Review
+from django.http import JsonResponse
+from .models import Store, Review, Reaction
 from .forms import StoreForm, ReviewForm
 import base64
 import io
@@ -30,7 +31,15 @@ def store_detail(request, store_id):
             return redirect('store_detail', store_id=store.id)
     else:
         form = ReviewForm()
-    return render(request, 'reviews/store_detail.html', {'store': store, 'form': form})
+    
+    # 各レビューにリアクション数を追加
+    reviews = store.reviews.all()
+    for review in reviews:
+        review.reactions_good = review.reactions.filter(reaction_type='good')
+        review.reactions_bad = review.reactions.filter(reaction_type='bad')
+        review.reactions_question = review.reactions.filter(reaction_type='question')
+    
+    return render(request, 'reviews/store_detail.html', {'store': store, 'form': form, 'reviews': reviews})
 
 # 店の登録
 @login_required
@@ -140,3 +149,49 @@ def store_delete(request, store_id):
     # GETリクエストの場合は、確認ページを表示
     # この確認ページはレビュー削除と共用できます
     return render(request, 'reviews/delete_confirm.html', {'object': store})
+
+@login_required
+def add_reaction(request, review_id):
+    """レビューにリアクションを追加する"""
+    if request.method != 'POST':
+        return JsonResponse({'error': '不正なリクエストです'}, status=400)
+    
+    review = get_object_or_404(Review, id=review_id)
+    reaction_type = request.POST.get('reaction_type')
+    
+    if reaction_type not in ['good', 'bad', 'question']:
+        return JsonResponse({'error': '不正なリアクションです'}, status=400)
+    
+    # 既存のリアクションを削除して新しいリアクションを追加（または同じなら削除）
+    existing_reaction = Reaction.objects.filter(review=review, user=request.user).first()
+    
+    if existing_reaction:
+        if existing_reaction.reaction_type == reaction_type:
+            # 同じリアクションなら削除（取り消し）
+            existing_reaction.delete()
+            action = 'removed'
+        else:
+            # 違うリアクションなら更新
+            existing_reaction.reaction_type = reaction_type
+            existing_reaction.save()
+            action = 'updated'
+    else:
+        # 新しいリアクションを作成
+        Reaction.objects.create(
+            review=review,
+            user=request.user,
+            reaction_type=reaction_type
+        )
+        action = 'added'
+    
+    # 各リアクションの数を取得
+    reaction_counts = {
+        'good': review.reactions.filter(reaction_type='good').count(),
+        'bad': review.reactions.filter(reaction_type='bad').count(),
+        'question': review.reactions.filter(reaction_type='question').count(),
+    }
+    
+    return JsonResponse({
+        'action': action,
+        'reaction_counts': reaction_counts
+    })

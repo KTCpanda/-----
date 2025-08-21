@@ -57,6 +57,28 @@
             {# ↓↓ get_rating_display と class を適用 ↓↓ #}
             <p><strong>評価: <span class="rating-label rating-{{ review.rating }}">{{ review.get_rating_display }}</span></strong></p>
             <p>{{ review.comment }}</p>
+            
+            {# リアクション機能 #}
+            {% if user.is_authenticated %}
+                <div class="reaction-buttons" style="margin: 10px 0;">
+                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'good')" data-review="{{ review.id }}" data-type="good">
+                        👍 <span id="good-count-{{ review.id }}">{{ review.reactions.good.count }}</span>
+                    </button>
+                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'bad')" data-review="{{ review.id }}" data-type="bad">
+                        👎 <span id="bad-count-{{ review.id }}">{{ review.reactions.bad.count }}</span>
+                    </button>
+                    <button class="reaction-btn" onclick="addReaction({{ review.id }}, 'question')" data-review="{{ review.id }}" data-type="question">
+                        ❓ <span id="question-count-{{ review.id }}">{{ review.reactions.question.count }}</span>
+                    </button>
+                </div>
+            {% else %}
+                <div class="reaction-display" style="margin: 10px 0;">
+                    <span>👍 {{ review.reactions.good.count }}</span>
+                    <span>👎 {{ review.reactions.bad.count }}</span>
+                    <span>❓ {{ review.reactions.question.count }}</span>
+                </div>
+            {% endif %}
+            
             <p style="display: flex; justify-content: space-between; align-items: center;">
                 <small>投稿者: {{ review.user.username }} ({{ review.created_at|date:"Y/m/d" }})</small>
                 
@@ -71,4 +93,26 @@
     {% empty %}
         <p>レビューはまだありません。</p>
     {% endfor %}
+
+<script>
+function addReaction(reviewId, reactionType) {
+    fetch(`/review/${reviewId}/reaction/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `reaction_type=${reactionType}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.reaction_counts) {
+            document.getElementById(`good-count-${reviewId}`).textContent = data.reaction_counts.good;
+            document.getElementById(`bad-count-${reviewId}`).textContent = data.reaction_counts.bad;
+            document.getElementById(`question-count-${reviewId}`).textContent = data.reaction_counts.question;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
 {% endblock %}

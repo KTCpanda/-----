@@ -143,3 +143,33 @@ form p {
 .logout-button:hover {
     background-color: #c82333;
 }
+
+/* リアクションボタンのスタイル */
+.reaction-btn {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.reaction-btn:hover {
+    background-color: #e9ecef;
+    transform: scale(1.05);
+}
+
+.reaction-btn:active {
+    transform: scale(0.95);
+}
+
+.reaction-display span {
+    margin-right: 15px;
+    padding: 5px 10px;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    font-size: 0.9rem;
+}

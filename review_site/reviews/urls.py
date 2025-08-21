@@ -23,4 +23,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('review/<int:review_id>/delete/', views.review_delete, name='review_delete'),
     path('store/<int:store_id>/delete/', views.store_delete, name='store_delete'),
+    
+    # リアクション機能
+    path('review/<int:review_id>/reaction/', views.add_reaction, name='add_reaction'),
 ]

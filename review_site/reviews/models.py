@@ -44,3 +44,21 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.store.name}への{self.user.username}のレビュー"
+
+class Reaction(models.Model):
+    REACTION_CHOICES = [
+        ('good', '👍 ぐっと'),
+        ('bad', '👎 のっと'),
+        ('question', '❓ ？'),
+    ]
+
+    review = models.ForeignKey(Review, verbose_name="レビュー", on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(User, verbose_name="リアクションした人", on_delete=models.CASCADE)
+    reaction_type = models.CharField("リアクション", max_length=20, choices=REACTION_CHOICES)
+    created_at = models.DateTimeField("リアクション日", auto_now_add=True)
+
+    class Meta:
+        unique_together = ('review', 'user')  # 1つのレビューに対して1人1つのリアクションのみ
+
+    def __str__(self):
+        return f"{self.user.username}が{self.review}に{self.get_reaction_type_display()}"
