@@ -129,4 +129,5 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # --- ホットペッパーAPIキーの設定（必要に応じて追加） ---
+# APIできてないです
 HOTPEPPER_API_KEY = os.environ.get('HOTPEPPER_API_KEY', '')
