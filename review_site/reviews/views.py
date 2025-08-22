@@ -24,6 +24,26 @@ def store_list(request):
         )
     
     stores = stores.order_by('-created_at')
+    
+    # 各店舗の評価統計を計算
+    for store in stores:
+        rating_stats = {}
+        reviews = store.reviews.all()
+        for rating_value, rating_label in Review.RATING_CHOICES:
+            count = reviews.filter(rating=rating_value).count()
+            if count > 0:  # カウントが0より大きい場合のみ追加
+                rating_stats[rating_value] = {
+                    'label': rating_label,
+                    'count': count
+                }
+        
+        # 評価をカウント数でソートし、上位3つのみを取得
+        sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+        top_3_ratings = dict(sorted_ratings[:3])
+        
+        store.rating_stats = top_3_ratings
+        store.total_reviews = reviews.count()
+    
     return render(request, 'reviews/store_list.html', {
         'stores': stores,
         'query': query
@@ -62,7 +82,26 @@ def store_detail(request, store_id):
         else:
             review.is_friend = False
     
-    return render(request, 'reviews/store_detail.html', {'store': store, 'form': form, 'reviews': reviews})
+    # 評価の統計を計算
+    rating_stats = {}
+    for rating_value, rating_label in Review.RATING_CHOICES:
+        count = reviews.filter(rating=rating_value).count()
+        if count > 0:  # カウントが0より大きい場合のみ追加
+            rating_stats[rating_value] = {
+                'label': rating_label,
+                'count': count
+            }
+    
+    # 評価をカウント数でソートし、上位順に並べる
+    sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+    rating_stats = dict(sorted_ratings)
+    
+    return render(request, 'reviews/store_detail.html', {
+        'store': store, 
+        'form': form, 
+        'reviews': reviews,
+        'rating_stats': rating_stats
+    })
 
 # 店の登録
 @login_required

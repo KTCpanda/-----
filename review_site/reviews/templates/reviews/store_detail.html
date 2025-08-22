@@ -35,6 +35,23 @@
 
     <hr style="margin: 30px 0;">
 
+    {# --- 評価統計 --- #}
+    <h2>みんなの評価</h2>
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        {% for rating_value, stats in rating_stats.items %}
+            {% if stats.count > 0 %}
+                <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: space-between;">
+                    <span style="font-size: 16px; flex: 1;">{{ stats.label }}</span>
+                    <span style="background-color: #007bff; color: white; padding: 4px 12px; border-radius: 15px; font-size: 14px; font-weight: bold;">
+                        {{ stats.count }}人
+                    </span>
+                </div>
+            {% endif %}
+        {% empty %}
+            <p style="text-align: center; color: #666;">まだ評価がありません</p>
+        {% endfor %}
+    </div>
+
     {# --- レビュー投稿フォーム --- #}
     <h2>レビュー投稿</h2>
     {% if user.is_authenticated %}

@@ -35,6 +35,23 @@
             <div>
                 <h2><a href="{% url 'store_detail' store.id %}">{{ store.name }}</a></h2>
                 <p>住所: {{ store.address }}</p>
+                
+                {# --- 評価統計を投稿者の上に移動 --- #}
+                {% if store.total_reviews > 0 %}
+                    <div style="margin: 10px 0;">
+                        <p style="font-size: 14px; color: #666; margin-bottom: 5px;">みんなの評価 ({{ store.total_reviews }}件)</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            {% for rating_value, stats in store.rating_stats.items %}
+                                {% if stats.count > 0 %}
+                                    <span style="background-color: #f0f0f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center;">
+                                        {{ stats.label|truncatechars:6 }} {{ stats.count }}人
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
                 <p style="display: flex; align-items: center;">
                     {% if store.created_by.profile and store.created_by.profile.get_avatar_url %}
                         <img src="{{ store.created_by.profile.get_avatar_url }}" alt="{{ store.created_by.username }}のアイコン" 
