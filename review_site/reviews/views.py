@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Count, Prefetch
 from django.contrib import messages
 from .models import Store, Review, Reaction, UserProfile, Follow, Notification, Tag
 from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm, TagForm
@@ -15,7 +15,12 @@ from PIL import Image
 # 店一覧
 def store_list(request):
     query = request.GET.get('q')
-    stores = Store.objects.all()
+    
+    # prefetch_relatedとselect_relatedで関連オブジェクトを効率的に取得
+    stores = Store.objects.select_related('created_by').prefetch_related(
+        'tags',
+        Prefetch('reviews', queryset=Review.objects.select_related('user'))
+    )
     
     if query:
         stores = stores.filter(
@@ -25,24 +30,34 @@ def store_list(request):
     
     stores = stores.order_by('-created_at')
     
-    # 各店舗の評価統計を計算
+    # 各店舗の評価統計を効率的に計算
     for store in stores:
-        rating_stats = {}
-        reviews = store.reviews.all()
-        for rating_value, rating_label in Review.RATING_CHOICES:
-            count = reviews.filter(rating=rating_value).count()
-            if count > 0:  # カウントが0より大きい場合のみ追加
-                rating_stats[rating_value] = {
-                    'label': rating_label,
-                    'count': count
-                }
+        reviews = store.reviews.all()  # 既にprefetchされているのでDBクエリなし
+        total_reviews = len(reviews)  # count()の代わりにlen()を使用
         
-        # 評価をカウント数でソートし、上位3つのみを取得
-        sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
-        top_3_ratings = dict(sorted_ratings[:3])
+        if total_reviews > 0:
+            # 評価の集計をPythonレベルで実行（小さなデータセットなので効率的）
+            rating_counts = {}
+            for review in reviews:
+                rating = review.rating
+                rating_counts[rating] = rating_counts.get(rating, 0) + 1
+            
+            # トップ3の評価を取得
+            rating_stats = {}
+            for rating_value, rating_label in Review.RATING_CHOICES:
+                count = rating_counts.get(rating_value, 0)
+                if count > 0:
+                    rating_stats[rating_value] = {
+                        'label': rating_label,
+                        'count': count
+                    }
+            
+            sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+            store.rating_stats = dict(sorted_ratings[:3])
+        else:
+            store.rating_stats = {}
         
-        store.rating_stats = top_3_ratings
-        store.total_reviews = reviews.count()
+        store.total_reviews = total_reviews
     
     return render(request, 'reviews/store_list.html', {
         'stores': stores,
@@ -51,9 +66,13 @@ def store_list(request):
 
 # 店の詳細・レビュー投稿
 def store_detail(request, store_id):
-    store = get_object_or_404(Store, id=store_id)
+    # 関連オブジェクトを効率的に取得
+    store = get_object_or_404(
+        Store.objects.select_related('created_by').prefetch_related('tags'), 
+        id=store_id
+    )
+    
     if request.method == 'POST':
-        # ログインしていない場合は処理しない
         if not request.user.is_authenticated:
             return redirect('login')
         
@@ -67,32 +86,52 @@ def store_detail(request, store_id):
     else:
         form = ReviewForm()
     
-    # 各レビューにリアクション数と友達関係を追加
-    reviews = store.reviews.all()
+    # レビューを効率的に取得（リアクションもprefetch）
+    reviews = store.reviews.select_related('user__profile').prefetch_related(
+        'reactions', 
+        'user__following_set', 
+        'user__follower_set'
+    ).all()
+    
+    # フォロー関係を一括取得（ログインユーザーのみ）
+    user_follows = set()
+    user_followers = set()
+    if request.user.is_authenticated:
+        user_follows = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+        user_followers = set(Follow.objects.filter(following=request.user).values_list('follower_id', flat=True))
+    
+    # 各レビューの情報を効率的に計算
+    rating_counts = {}
     for review in reviews:
-        review.good_count = review.reactions.filter(reaction_type='good').count()
-        review.bad_count = review.reactions.filter(reaction_type='bad').count()
-        review.question_count = review.reactions.filter(reaction_type='question').count()
+        # リアクション数を計算（prefetchされたデータを使用）
+        reactions = review.reactions.all()
+        review.good_count = sum(1 for r in reactions if r.reaction_type == 'good')
+        review.bad_count = sum(1 for r in reactions if r.reaction_type == 'bad')
+        review.question_count = sum(1 for r in reactions if r.reaction_type == 'question')
         
-        # ログインユーザーとの友達関係を確認
-        if request.user.is_authenticated and request.user != review.user:
-            is_following = Follow.objects.filter(follower=request.user, following=review.user).exists()
-            is_followed_by = Follow.objects.filter(follower=review.user, following=request.user).exists()
+        # 友達関係を効率的に確認
+        if request.user.is_authenticated and request.user.id != review.user_id:
+            is_following = review.user_id in user_follows
+            is_followed_by = review.user_id in user_followers
             review.is_friend = is_following and is_followed_by
         else:
             review.is_friend = False
+            
+        # 評価統計をカウント
+        rating = review.rating
+        rating_counts[rating] = rating_counts.get(rating, 0) + 1
     
-    # 評価の統計を計算
+    # 評価統計を構築
     rating_stats = {}
     for rating_value, rating_label in Review.RATING_CHOICES:
-        count = reviews.filter(rating=rating_value).count()
-        if count > 0:  # カウントが0より大きい場合のみ追加
+        count = rating_counts.get(rating_value, 0)
+        if count > 0:
             rating_stats[rating_value] = {
                 'label': rating_label,
                 'count': count
             }
     
-    # 評価をカウント数でソートし、上位順に並べる
+    # カウント数でソート
     sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
     rating_stats = dict(sorted_ratings)
     
@@ -477,32 +516,25 @@ def follow_user(request, user_id):
 
 @login_required
 def notifications_view(request):
-    """通知一覧"""
-    notifications = Notification.objects.filter(user=request.user)
+    """通知一覧（最適化版）"""
+    # 未読通知を効率的に取得・処理
+    unread_notifications = Notification.objects.filter(user=request.user, is_read=False)
+    unread_count = unread_notifications.count()
     
-    # 未読通知があったかどうかを記録
-    had_unread = notifications.filter(is_read=False).exists()
-    
-    # 通知を既読にしてから削除する
-    if had_unread:
-        unread_notifications = notifications.filter(is_read=False)
-        unread_count = unread_notifications.count()
+    if unread_count > 0:
+        # 一括で既読にして削除
         unread_notifications.update(is_read=True)
-        
-        # 既読になった通知を削除
-        notifications.filter(is_read=True).delete()
-        
-        # 確認メッセージを作成
+        unread_notifications.delete()
         confirmation_message = f"{unread_count}件の通知を確認しました。"
     else:
         confirmation_message = None
     
-    # 削除後の通知一覧を取得（基本的に空になる）
+    # 残りの通知（基本的に空）
     remaining_notifications = Notification.objects.filter(user=request.user)
     
     return render(request, 'reviews/notifications.html', {
         'notifications': remaining_notifications,
-        'had_unread': had_unread,
+        'had_unread': unread_count > 0,
         'confirmation_message': confirmation_message
     })
 

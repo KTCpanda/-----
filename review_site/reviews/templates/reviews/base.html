@@ -55,150 +55,200 @@
     
     {% if user.is_authenticated %}
     <script>
+        // グローバル変数でキャッシュ
+        let tagsCache = null;
+        let csrfToken = null;
+        
         // ページ読み込み時にタグを自動で読み込む
         document.addEventListener('DOMContentLoaded', function() {
+            // CSRFトークンをキャッシュ
+            csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             loadTags();
             setupDropZones();
         });
         
-        // タグを読み込む
+        // タグを読み込む（キャッシュ機能付き）
         function loadTags() {
+            if (tagsCache) {
+                renderTags(tagsCache);
+                return;
+            }
+            
             fetch('/api/tags/')
                 .then(response => response.json())
                 .then(tags => {
-                    const tagList = document.getElementById('tag-list');
-                    tagList.innerHTML = '';
-                    tags.forEach(tag => {
-                        const tagElement = document.createElement('div');
-                        tagElement.className = 'draggable-tag';
-                        tagElement.draggable = true;
-                        tagElement.dataset.tagId = tag.id;
-                        tagElement.innerHTML = `
-                            <span style="background-color: ${tag.color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: block; text-align: center; cursor: grab; margin-bottom: 5px;">
-                                ${tag.name}
-                            </span>
-                        `;
-                        
-                        // ドラッグイベント
-                        tagElement.addEventListener('dragstart', function(e) {
-                            e.dataTransfer.setData('text/plain', tag.id);
-                            e.dataTransfer.setData('tag-name', tag.name);
-                            e.dataTransfer.setData('tag-color', tag.color);
-                            this.style.opacity = '0.5';
-                        });
-                        
-                        tagElement.addEventListener('dragend', function(e) {
-                            this.style.opacity = '1';
-                        });
-                        
-                        tagList.appendChild(tagElement);
-                    });
+                    tagsCache = tags; // キャッシュに保存
+                    renderTags(tags);
                 })
                 .catch(error => console.error('Error loading tags:', error));
         }
         
-        // 店舗にドロップエリアを設定
+        // タグをレンダリング
+        function renderTags(tags) {
+            const tagList = document.getElementById('tag-list');
+            if (!tagList) return;
+            
+            const fragment = document.createDocumentFragment(); // DOM操作の最適化
+            
+            tags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'draggable-tag';
+                tagElement.draggable = true;
+                tagElement.dataset.tagId = tag.id;
+                
+                const span = document.createElement('span');
+                span.style.cssText = `background-color: ${tag.color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: block; text-align: center; cursor: grab; margin-bottom: 5px;`;
+                span.textContent = tag.name;
+                tagElement.appendChild(span);
+                
+                // ドラッグイベント（最適化）
+                tagElement.addEventListener('dragstart', createDragHandler(tag));
+                tagElement.addEventListener('dragend', resetOpacity);
+                
+                fragment.appendChild(tagElement);
+            });
+            
+            tagList.innerHTML = '';
+            tagList.appendChild(fragment);
+        }
+        
+        // ドラッグハンドラーを作成（クロージャーで最適化）
+        function createDragHandler(tag) {
+            return function(e) {
+                e.dataTransfer.setData('text/plain', tag.id);
+                e.dataTransfer.setData('tag-name', tag.name);
+                e.dataTransfer.setData('tag-color', tag.color);
+                this.style.opacity = '0.5';
+            };
+        }
+        
+        // 透明度をリセット
+        function resetOpacity() {
+            this.style.opacity = '1';
+        }
+        
+        // 店舗にドロップエリアを設定（最適化）
         function setupDropZones() {
             const storeCards = document.querySelectorAll('.store-card');
             storeCards.forEach(function(card) {
-                // 自分の投稿かどうかをチェック
                 const isMyStore = card.dataset.isOwner === 'true';
                 
                 if (isMyStore) {
-                    // 自分の投稿の場合：ドロップ可能
-                    card.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        this.style.backgroundColor = '#f0f8ff';
-                        this.style.border = '2px dashed #007bff';
-                    });
-                    
-                    card.addEventListener('dragleave', function(e) {
-                        this.style.backgroundColor = '';
-                        this.style.border = '';
-                    });
-                    
-                    card.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        this.style.backgroundColor = '';
-                        this.style.border = '';
-                        
-                        const tagId = e.dataTransfer.getData('text/plain');
-                        const tagName = e.dataTransfer.getData('tag-name');
-                        const tagColor = e.dataTransfer.getData('tag-color');
-                        const storeId = this.dataset.storeId;
-                        
-                        if (storeId && tagId) {
-                            addTagToStore(storeId, tagId, tagName, tagColor, this);
-                        }
-                    });
+                    setupOwnerDropZone(card);
                 } else {
-                    // 他人の投稿の場合：ドロップ不可の視覚的フィードバック
-                    card.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        this.style.backgroundColor = '#ffe6e6';
-                        this.style.border = '2px dashed #ff4444';
-                        e.dataTransfer.dropEffect = 'none';
-                    });
-                    
-                    card.addEventListener('dragleave', function(e) {
-                        this.style.backgroundColor = '';
-                        this.style.border = '';
-                    });
-                    
-                    card.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        this.style.backgroundColor = '';
-                        this.style.border = '';
-                        alert('この店舗にタグを追加する権限がありません');
-                    });
+                    setupNonOwnerDropZone(card);
                 }
             });
         }
         
-        // 店舗にタグを追加
-        function addTagToStore(storeId, tagId, tagName, tagColor, storeElement) {
-            fetch(`/store/${storeId}/add-tag/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: `tag_id=${tagId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // タグ表示エリアを更新
-                    updateStoreTagDisplay(storeElement, data.tags);
-                } else {
-                    alert('タグの追加に失敗しました: ' + data.message);
+        // オーナーのドロップゾーン設定
+        function setupOwnerDropZone(card) {
+            card.addEventListener('dragover', allowDrop);
+            card.addEventListener('dragleave', resetCardStyle);
+            card.addEventListener('drop', function(e) {
+                e.preventDefault();
+                resetCardStyle.call(this);
+                
+                const storeId = this.dataset.storeId;
+                const tagId = e.dataTransfer.getData('text/plain');
+                
+                if (storeId && tagId) {
+                    addTagToStore(storeId, tagId, this);
                 }
-            })
-            .catch(error => {
-                console.error('Error adding tag:', error);
-                alert('タグの追加中にエラーが発生しました');
             });
         }
         
-        // 店舗のタグ表示を更新
+        // 非オーナーのドロップゾーン設定
+        function setupNonOwnerDropZone(card) {
+            card.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#ffe6e6';
+                this.style.border = '2px dashed #ff4444';
+                e.dataTransfer.dropEffect = 'none';
+            });
+            card.addEventListener('dragleave', resetCardStyle);
+            card.addEventListener('drop', function(e) {
+                e.preventDefault();
+                resetCardStyle.call(this);
+                alert('この店舗にタグを追加する権限がありません');
+            });
+        }
+        
+        // ドロップを許可
+        function allowDrop(e) {
+            e.preventDefault();
+            this.style.backgroundColor = '#f0f8ff';
+            this.style.border = '2px dashed #007bff';
+        }
+        
+        // カードスタイルをリセット
+        function resetCardStyle() {
+            this.style.backgroundColor = '';
+            this.style.border = '';
+        }
+        
+        // 店舗にタグを追加（デバウンス機能付き）
+        let addTagTimeout = null;
+        function addTagToStore(storeId, tagId, storeElement) {
+            // デバウンス処理
+            if (addTagTimeout) {
+                clearTimeout(addTagTimeout);
+            }
+            
+            addTagTimeout = setTimeout(() => {
+                fetch(`/store/${storeId}/add-tag/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken || document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                    },
+                    body: `tag_id=${tagId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStoreTagDisplay(storeElement, data.tags);
+                        // キャッシュを無効化（タグが使用されたため）
+                        tagsCache = null;
+                    } else {
+                        alert('タグの追加に失敗しました: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding tag:', error);
+                    alert('タグの追加中にエラーが発生しました');
+                });
+            }, 100);
+        }
+        
+        // 店舗のタグ表示を更新（最適化）
         function updateStoreTagDisplay(storeElement, tags) {
             const tagContainer = storeElement.querySelector('.store-tags');
-            if (tagContainer) {
+            if (!tagContainer) return;
+            
+            if (tags.length === 0) {
                 tagContainer.innerHTML = '';
-                if (tags.length > 0) {
-                    const tagLabel = document.createElement('span');
-                    tagLabel.style.cssText = 'color: #666; font-size: 14px; margin-right: 5px;';
-                    tagLabel.textContent = 'タグ:';
-                    tagContainer.appendChild(tagLabel);
-                    
-                    tags.forEach(tag => {
-                        const tagSpan = document.createElement('span');
-                        tagSpan.style.cssText = `background-color: ${tag.color}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 5px;`;
-                        tagSpan.textContent = tag.name;
-                        tagContainer.appendChild(tagSpan);
-                    });
-                }
+                return;
             }
+            
+            const fragment = document.createDocumentFragment();
+            
+            // タグラベル
+            const tagLabel = document.createElement('span');
+            tagLabel.style.cssText = 'color: #666; font-size: 14px; margin-right: 5px;';
+            tagLabel.textContent = 'タグ:';
+            fragment.appendChild(tagLabel);
+            
+            // タグ要素
+            tags.forEach(tag => {
+                const tagSpan = document.createElement('span');
+                tagSpan.style.cssText = `background-color: ${tag.color}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 5px;`;
+                tagSpan.textContent = tag.name;
+                fragment.appendChild(tagSpan);
+            });
+            
+            tagContainer.innerHTML = '';
+            tagContainer.appendChild(fragment);
         }
     </script>
     {% endif %}
