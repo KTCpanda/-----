@@ -48,7 +48,7 @@
     </div>
     {% endif %}
     
-    <main style="margin-right: 270px; padding: 20px;">
+    <main style="{% if user.is_authenticated %}margin-right: 270px;{% endif %}">
         {% block content %}
         {% endblock %}
     </main>
@@ -101,31 +101,57 @@
         function setupDropZones() {
             const storeCards = document.querySelectorAll('.store-card');
             storeCards.forEach(function(card) {
-                card.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    this.style.backgroundColor = '#f0f8ff';
-                    this.style.border = '2px dashed #007bff';
-                });
+                // 自分の投稿かどうかをチェック
+                const isMyStore = card.dataset.isOwner === 'true';
                 
-                card.addEventListener('dragleave', function(e) {
-                    this.style.backgroundColor = '';
-                    this.style.border = '';
-                });
-                
-                card.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    this.style.backgroundColor = '';
-                    this.style.border = '';
+                if (isMyStore) {
+                    // 自分の投稿の場合：ドロップ可能
+                    card.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        this.style.backgroundColor = '#f0f8ff';
+                        this.style.border = '2px dashed #007bff';
+                    });
                     
-                    const tagId = e.dataTransfer.getData('text/plain');
-                    const tagName = e.dataTransfer.getData('tag-name');
-                    const tagColor = e.dataTransfer.getData('tag-color');
-                    const storeId = this.dataset.storeId;
+                    card.addEventListener('dragleave', function(e) {
+                        this.style.backgroundColor = '';
+                        this.style.border = '';
+                    });
                     
-                    if (storeId && tagId) {
-                        addTagToStore(storeId, tagId, tagName, tagColor, this);
-                    }
-                });
+                    card.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        this.style.backgroundColor = '';
+                        this.style.border = '';
+                        
+                        const tagId = e.dataTransfer.getData('text/plain');
+                        const tagName = e.dataTransfer.getData('tag-name');
+                        const tagColor = e.dataTransfer.getData('tag-color');
+                        const storeId = this.dataset.storeId;
+                        
+                        if (storeId && tagId) {
+                            addTagToStore(storeId, tagId, tagName, tagColor, this);
+                        }
+                    });
+                } else {
+                    // 他人の投稿の場合：ドロップ不可の視覚的フィードバック
+                    card.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        this.style.backgroundColor = '#ffe6e6';
+                        this.style.border = '2px dashed #ff4444';
+                        e.dataTransfer.dropEffect = 'none';
+                    });
+                    
+                    card.addEventListener('dragleave', function(e) {
+                        this.style.backgroundColor = '';
+                        this.style.border = '';
+                    });
+                    
+                    card.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        this.style.backgroundColor = '';
+                        this.style.border = '';
+                        alert('この店舗にタグを追加する権限がありません');
+                    });
+                }
             });
         }
         

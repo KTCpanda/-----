@@ -172,6 +172,14 @@ def tags_api(request):
 def add_tag_to_store(request, store_id):
     if request.method == 'POST':
         store = get_object_or_404(Store, id=store_id)
+        
+        # 店舗の作成者のみがタグを追加可能
+        if store.created_by != request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'この店舗にタグを追加する権限がありません'
+            })
+        
         tag_id = request.POST.get('tag_id')
         
         if tag_id:
@@ -503,3 +511,31 @@ def get_unread_notifications_count(request):
     """未読通知数を取得"""
     count = Notification.objects.filter(user=request.user, is_read=False).count()
     return JsonResponse({'count': count})
+
+@login_required
+def remove_tag_from_store(request, store_id):
+    """店舗からタグを削除"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST method required'}, status=405)
+    
+    store = get_object_or_404(Store, id=store_id)
+    
+    # 店舗の作成者のみが削除可能
+    if store.created_by != request.user:
+        return JsonResponse({'success': False, 'message': '権限がありません'}, status=403)
+    
+    tag_id = request.POST.get('tag_id')
+    if not tag_id:
+        return JsonResponse({'success': False, 'message': 'タグIDが必要です'}, status=400)
+    
+    try:
+        tag = Tag.objects.get(id=tag_id)
+        store.tags.remove(tag)
+        return JsonResponse({
+            'success': True,
+            'message': 'タグが削除されました'
+        })
+    except Tag.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'タグが見つかりません'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)

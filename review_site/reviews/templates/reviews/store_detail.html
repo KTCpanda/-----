@@ -26,8 +26,14 @@
             <span style="margin-left: 15px; display: flex; align-items: center; gap: 5px;">
                 <span style="color: #666; font-size: 14px;">タグ:</span>
                 {% for tag in store.tags.all %}
-                    <span style="background-color: {{ tag.color }}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                    <span style="background-color: {{ tag.color }}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; position: relative; display: inline-flex; align-items: center;">
                         {{ tag.name }}
+                        {% if user == store.created_by %}
+                            <button onclick="removeTag({{ store.id }}, {{ tag.id }})" 
+                                    style="background: none; border: none; color: white; cursor: pointer; margin-left: 5px; font-size: 14px; padding: 0; line-height: 1;">
+                                ×
+                            </button>
+                        {% endif %}
                     </span>
                 {% endfor %}
             </span>
@@ -152,6 +158,32 @@
     {% endfor %}
 
 <script>
+function removeTag(storeId, tagId) {
+    if (confirm('このタグを削除しますか？')) {
+        fetch(`/store/${storeId}/remove-tag/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `tag_id=${tagId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // ページをリロードして変更を反映
+                location.reload();
+            } else {
+                alert('タグの削除に失敗しました: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error removing tag:', error);
+            alert('タグの削除中にエラーが発生しました');
+        });
+    }
+}
+
 function addReaction(reviewId, reactionType) {
     fetch(`/review/${reviewId}/reaction/`, {
         method: 'POST',

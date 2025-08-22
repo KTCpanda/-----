@@ -18,6 +18,7 @@ urlpatterns = [
     path('tags/', views.tag_list, name='tag_list'),
     path('api/tags/', views.tags_api, name='tags_api'),
     path('store/<int:store_id>/add-tag/', views.add_tag_to_store, name='add_tag_to_store'),
+    path('store/<int:store_id>/remove-tag/', views.remove_tag_from_store, name='remove_tag_from_store'),
     
     # 店の編集ページ
     path('store/<int:store_id>/edit/', views.store_edit, name='store_edit'),
