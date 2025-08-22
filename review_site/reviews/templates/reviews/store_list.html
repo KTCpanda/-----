@@ -7,8 +7,17 @@
         <form method="get" action="{% url 'store_list' %}">
             <input type="text" name="q" class="search-input" placeholder="店名や住所で検索..." value="{{ query|default_if_none:'' }}">
             <button type="submit" class="search-button">検索</button>
+            {% if query %}
+                <a href="{% url 'store_list' %}" style="margin-left: 10px; color: #666; text-decoration: none;">✖ クリア</a>
+            {% endif %}
         </form>
     </div>
+
+    {% if query %}
+        <p style="margin: 10px 0; color: #666;">
+            「<strong>{{ query }}</strong>」の検索結果: {{ stores.count }}件
+        </p>
+    {% endif %}
     <hr>
 
     {# --- あなたのデータベースの検索結果 --- #}
@@ -52,11 +61,14 @@
 
 
     {# --- 検索結果が0件だった場合の表示 --- #}
-    {% if not stores and not api_stores %}
+    {% if stores.count == 0 %}
         {% if query %}
-            <p style="text-align: center;">「{{ query }}」に一致するお店は見つかりませんでした。</p>
+            <p style="text-align: center; color: #666; margin-top: 40px;">「{{ query }}」に一致するお店は見つかりませんでした。</p>
+            <p style="text-align: center;">
+                <a href="{% url 'store_list' %}" style="color: #007bff; text-decoration: none;">すべてのお店を表示</a>
+            </p>
         {% else %}
-            <p style="text-align: center;">まだ登録されているお店がありません。</p>
+            <p style="text-align: center; color: #666; margin-top: 40px;">まだ登録されているお店がありません。</p>
         {% endif %}
     {% endif %}
 

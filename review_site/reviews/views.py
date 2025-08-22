@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db.models import Q
 from .models import Store, Review, Reaction
 from .forms import StoreForm, ReviewForm
 import base64
@@ -11,8 +12,20 @@ from PIL import Image
 
 # 店一覧
 def store_list(request):
-    stores = Store.objects.all().order_by('-created_at')
-    return render(request, 'reviews/store_list.html', {'stores': stores})
+    query = request.GET.get('q')
+    stores = Store.objects.all()
+    
+    if query:
+        stores = stores.filter(
+            Q(name__icontains=query) | 
+            Q(address__icontains=query)
+        )
+    
+    stores = stores.order_by('-created_at')
+    return render(request, 'reviews/store_list.html', {
+        'stores': stores,
+        'query': query
+    })
 
 # 店の詳細・レビュー投稿
 def store_detail(request, store_id):
