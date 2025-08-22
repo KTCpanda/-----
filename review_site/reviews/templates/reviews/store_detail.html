@@ -8,7 +8,19 @@
         <img src="{{ store.get_image_url }}" alt="{{ store.name }}の画像" style="max-width: 400px; height: auto; margin-top: 15px; border-radius: 8px;">
     {% endif %}
 
-    <p style="margin-top: 15px;">登録者: {{ store.created_by.username }}</p>
+    <p style="margin-top: 15px; display: flex; align-items: center;">
+        <a href="{% url 'user_profile' store.created_by.id %}" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+            {% if store.created_by.profile and store.created_by.profile.get_avatar_url %}
+                <img src="{{ store.created_by.profile.get_avatar_url }}" alt="{{ store.created_by.username }}のアイコン" 
+                     style="width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover;">
+            {% else %}
+                <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #ddd; margin-right: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">
+                    {{ store.created_by.username|first|upper }}
+                </div>
+            {% endif %}
+            登録者: {{ store.created_by.username }}
+        </a>
+    </p>
     
     {% if user == store.created_by %}
         <div style="margin-top: 15px;">
@@ -80,7 +92,23 @@
             {% endif %}
             
             <p style="display: flex; justify-content: space-between; align-items: center;">
-                <small>投稿者: {{ review.user.username }} ({{ review.created_at|date:"Y/m/d" }})</small>
+                <small style="display: flex; align-items: center;">
+                    <a href="{% url 'user_profile' review.user.id %}" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                        {% if review.user.profile and review.user.profile.get_avatar_url %}
+                            <img src="{{ review.user.profile.get_avatar_url }}" alt="{{ review.user.username }}のアイコン" 
+                                 style="width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover;">
+                        {% else %}
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #ddd; margin-right: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">
+                                {{ review.user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                        投稿者: {{ review.user.username }}
+                        {% if review.is_friend %}
+                            <span style="background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 6px;">👥 友達</span>
+                        {% endif %}
+                        ({{ review.created_at|date:"Y/m/d" }})
+                    </a>
+                </small>
                 
                 {% if user == review.user %}
                     <form action="{% url 'review_delete' review.id %}" method="post">

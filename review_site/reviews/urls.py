@@ -30,4 +30,8 @@ urlpatterns = [
     
     # プロフィール機能
     path('profile/', views.profile_view, name='profile'),
+    path('user/<int:user_id>/', views.user_profile_view, name='user_profile'),
+    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
+    path('notifications/', views.notifications_view, name='notifications'),
+    path('api/notifications/count/', views.get_unread_notifications_count, name='unread_notifications_count'),
 ]

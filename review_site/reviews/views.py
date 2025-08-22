@@ -2,10 +2,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib import messages
-from .models import Store, Review, Reaction, UserProfile
+from .models import Store, Review, Reaction, UserProfile, Follow, Notification
 from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm
 import base64
 import io
@@ -46,12 +47,20 @@ def store_detail(request, store_id):
     else:
         form = ReviewForm()
     
-    # 各レビューにリアクション数を追加
+    # 各レビューにリアクション数と友達関係を追加
     reviews = store.reviews.all()
     for review in reviews:
         review.good_count = review.reactions.filter(reaction_type='good').count()
         review.bad_count = review.reactions.filter(reaction_type='bad').count()
         review.question_count = review.reactions.filter(reaction_type='question').count()
+        
+        # ログインユーザーとの友達関係を確認
+        if request.user.is_authenticated and request.user != review.user:
+            is_following = Follow.objects.filter(follower=request.user, following=review.user).exists()
+            is_followed_by = Follow.objects.filter(follower=review.user, following=request.user).exists()
+            review.is_friend = is_following and is_followed_by
+        else:
+            review.is_friend = False
     
     return render(request, 'reviews/store_detail.html', {'store': store, 'form': form, 'reviews': reviews})
 
@@ -256,3 +265,106 @@ def profile_view(request):
         'profile_form': profile_form,
         'profile': profile
     })
+
+def user_profile_view(request, user_id):
+    """他のユーザーのプロフィール表示"""
+    profile_user = get_object_or_404(User, id=user_id)
+    profile, created = UserProfile.objects.get_or_create(user=profile_user)
+    
+    # フォロー状況を確認
+    is_following = False
+    is_followed_by = False
+    is_friend = False
+    
+    if request.user.is_authenticated:
+        is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+        is_followed_by = Follow.objects.filter(follower=profile_user, following=request.user).exists()
+        is_friend = is_following and is_followed_by  # 相互フォローの場合は友達
+    
+    # ユーザーの投稿した店舗とレビューを取得
+    user_stores = Store.objects.filter(created_by=profile_user).order_by('-created_at')[:5]
+    user_reviews = Review.objects.filter(user=profile_user).order_by('-created_at')[:5]
+    
+    # フォロワー・フォロー数を取得
+    followers_count = Follow.objects.filter(following=profile_user).count()
+    following_count = Follow.objects.filter(follower=profile_user).count()
+    
+    return render(request, 'reviews/user_profile.html', {
+        'profile_user': profile_user,
+        'profile': profile,
+        'is_following': is_following,
+        'is_followed_by': is_followed_by,
+        'is_friend': is_friend,
+        'user_stores': user_stores,
+        'user_reviews': user_reviews,
+        'followers_count': followers_count,
+        'following_count': following_count,
+    })
+
+@login_required
+def follow_user(request, user_id):
+    """ユーザーをフォロー/アンフォロー"""
+    if request.method == 'POST':
+        target_user = get_object_or_404(User, id=user_id)
+        
+        # 自分自身をフォローしようとした場合
+        if target_user == request.user:
+            return JsonResponse({'success': False, 'message': '自分自身をフォローすることはできません。'})
+        
+        follow_obj, created = Follow.objects.get_or_create(
+            follower=request.user,
+            following=target_user
+        )
+        
+        if created:
+            # フォロー通知を作成
+            Notification.objects.create(
+                user=target_user,
+                from_user=request.user,
+                notification_type='follow',
+                message=f'{request.user.username}があなたをフォローしました。'
+            )
+            action = 'followed'
+            message = f'{target_user.username}をフォローしました。'
+        else:
+            # 既にフォローしている場合はアンフォロー
+            follow_obj.delete()
+            action = 'unfollowed'
+            message = f'{target_user.username}のフォローを解除しました。'
+        
+        # フォロワー数を更新
+        followers_count = Follow.objects.filter(following=target_user).count()
+        
+        # 友達状態を確認
+        is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
+        is_followed_by = Follow.objects.filter(follower=target_user, following=request.user).exists()
+        is_friend = is_following and is_followed_by
+        
+        return JsonResponse({
+            'success': True,
+            'action': action,
+            'message': message,
+            'followers_count': followers_count,
+            'is_following': is_following,
+            'is_friend': is_friend
+        })
+    
+    return JsonResponse({'success': False, 'message': '無効なリクエストです。'})
+
+@login_required
+def notifications_view(request):
+    """通知一覧"""
+    notifications = Notification.objects.filter(user=request.user)
+    
+    # 通知を既読にする
+    notifications.filter(is_read=False).update(is_read=True)
+    
+    return render(request, 'reviews/notifications.html', {
+        'notifications': notifications
+    })
+
+@login_required
+def get_unread_notifications_count(request):
+    """未読通知数を取得"""
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'count': count})

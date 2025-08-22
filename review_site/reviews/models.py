@@ -23,6 +23,37 @@ class UserProfile(models.Model):
             return f"data:image/jpeg;base64,{self.avatar_data}"
         return None
 
+class Follow(models.Model):
+    follower = models.ForeignKey(User, verbose_name="フォローする人", on_delete=models.CASCADE, related_name='following')
+    following = models.ForeignKey(User, verbose_name="フォローされる人", on_delete=models.CASCADE, related_name='followers')
+    created_at = models.DateTimeField("フォロー日", auto_now_add=True)
+
+    class Meta:
+        unique_together = ('follower', 'following')
+        
+    def __str__(self):
+        return f"{self.follower.username} → {self.following.username}"
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('follow', 'フォロー'),
+        ('review', 'レビュー'),
+        ('reaction', 'リアクション'),
+    ]
+    
+    user = models.ForeignKey(User, verbose_name="通知を受け取る人", on_delete=models.CASCADE, related_name='notifications')
+    from_user = models.ForeignKey(User, verbose_name="通知を送る人", on_delete=models.CASCADE, related_name='sent_notifications')
+    notification_type = models.CharField("通知タイプ", max_length=20, choices=NOTIFICATION_TYPES)
+    message = models.TextField("通知内容")
+    is_read = models.BooleanField("既読", default=False)
+    created_at = models.DateTimeField("通知日", auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.from_user.username}から{self.user.username}への{self.get_notification_type_display()}"
+
 # ... Storeモデルは変更なし ...
 class Store(models.Model):
     name = models.CharField("店名", max_length=100)
