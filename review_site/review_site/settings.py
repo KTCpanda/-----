@@ -94,7 +94,11 @@ USE_TZ = True
 
 # --- 静的ファイル (CSS, JavaScript) の設定 ---
 STATIC_URL = 'static/'
-# ★★★ この行を修正しました ★★★
+
+# ↓ この行を追記してください
+STATICFILES_DIRS = [BASE_DIR / "static",]
+
+
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = BASE_DIR / 'staticfiles' # collectstaticの出力先
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -113,3 +117,7 @@ LOGOUT_REDIRECT_URL = '/'
 # --- ホットペッパーAPIキーの設定（必要に応じて追加） ---
 # APIできてないです
 HOTPEPPER_API_KEY = os.environ.get('HOTPEPPER_API_KEY', '')
+
+
+
+
