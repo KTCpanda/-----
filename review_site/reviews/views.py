@@ -17,10 +17,7 @@ def store_list(request):
     query = request.GET.get('q')
     
     # prefetch_relatedとselect_relatedで関連オブジェクトを効率的に取得
-    stores = Store.objects.select_related('created_by').prefetch_related(
-        'tags',
-        Prefetch('reviews', queryset=Review.objects.select_related('user'))
-    )
+    stores = Store.objects.select_related('created_by').prefetch_related('tags', 'reviews')
     
     if query:
         stores = stores.filter(
@@ -30,31 +27,28 @@ def store_list(request):
     
     stores = stores.order_by('-created_at')
     
-    # 各店舗の評価統計を効率的に計算
+    # 各店舗の評価統計を計算
     for store in stores:
-        reviews = store.reviews.all()  # 既にprefetchされているのでDBクエリなし
-        total_reviews = len(reviews)  # count()の代わりにlen()を使用
+        rating_stats = {}
+        reviews = store.reviews.all()
+        total_reviews = reviews.count()
         
-        if total_reviews > 0:
-            # 評価の集計をPythonレベルで実行（小さなデータセットなので効率的）
-            rating_counts = {}
-            for review in reviews:
-                rating = review.rating
-                rating_counts[rating] = rating_counts.get(rating, 0) + 1
-            
-            # トップ3の評価を取得
-            rating_stats = {}
+        # 評価統計を安全に計算
+        try:
             for rating_value, rating_label in Review.RATING_CHOICES:
-                count = rating_counts.get(rating_value, 0)
+                count = reviews.filter(rating=rating_value).count()
                 if count > 0:
                     rating_stats[rating_value] = {
                         'label': rating_label,
                         'count': count
                     }
             
+            # 評価をカウント数でソートし、上位3つのみを取得
             sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
             store.rating_stats = dict(sorted_ratings[:3])
-        else:
+        except Exception as e:
+            # エラーが発生した場合は空の統計を設定
+            print(f"Error calculating rating stats for store {store.id}: {e}")
             store.rating_stats = {}
         
         store.total_reviews = total_reviews
@@ -66,11 +60,7 @@ def store_list(request):
 
 # 店の詳細・レビュー投稿
 def store_detail(request, store_id):
-    # 関連オブジェクトを効率的に取得
-    store = get_object_or_404(
-        Store.objects.select_related('created_by').prefetch_related('tags'), 
-        id=store_id
-    )
+    store = get_object_or_404(Store, id=store_id)
     
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -86,54 +76,48 @@ def store_detail(request, store_id):
     else:
         form = ReviewForm()
     
-    # レビューを効率的に取得（リアクションもprefetch）
-    reviews = store.reviews.select_related('user__profile').prefetch_related(
-        'reactions', 
-        'user__following_set', 
-        'user__follower_set'
-    ).all()
+    # レビューを取得
+    reviews = store.reviews.all()
     
-    # フォロー関係を一括取得（ログインユーザーのみ）
-    user_follows = set()
-    user_followers = set()
-    if request.user.is_authenticated:
-        user_follows = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
-        user_followers = set(Follow.objects.filter(following=request.user).values_list('follower_id', flat=True))
-    
-    # 各レビューの情報を効率的に計算
-    rating_counts = {}
+    # 各レビューの情報を計算
     for review in reviews:
-        # リアクション数を計算（prefetchされたデータを使用）
-        reactions = review.reactions.all()
-        review.good_count = sum(1 for r in reactions if r.reaction_type == 'good')
-        review.bad_count = sum(1 for r in reactions if r.reaction_type == 'bad')
-        review.question_count = sum(1 for r in reactions if r.reaction_type == 'question')
-        
-        # 友達関係を効率的に確認
-        if request.user.is_authenticated and request.user.id != review.user_id:
-            is_following = review.user_id in user_follows
-            is_followed_by = review.user_id in user_followers
-            review.is_friend = is_following and is_followed_by
-        else:
-            review.is_friend = False
+        try:
+            # リアクション数を計算
+            review.good_count = review.reactions.filter(reaction_type='good').count()
+            review.bad_count = review.reactions.filter(reaction_type='bad').count()
+            review.question_count = review.reactions.filter(reaction_type='question').count()
             
-        # 評価統計をカウント
-        rating = review.rating
-        rating_counts[rating] = rating_counts.get(rating, 0) + 1
+            # 友達関係を確認
+            if request.user.is_authenticated and request.user != review.user:
+                is_following = Follow.objects.filter(follower=request.user, following=review.user).exists()
+                is_followed_by = Follow.objects.filter(follower=review.user, following=request.user).exists()
+                review.is_friend = is_following and is_followed_by
+            else:
+                review.is_friend = False
+        except Exception as e:
+            print(f"Error processing review {review.id}: {e}")
+            review.good_count = 0
+            review.bad_count = 0
+            review.question_count = 0
+            review.is_friend = False
     
     # 評価統計を構築
     rating_stats = {}
-    for rating_value, rating_label in Review.RATING_CHOICES:
-        count = rating_counts.get(rating_value, 0)
-        if count > 0:
-            rating_stats[rating_value] = {
-                'label': rating_label,
-                'count': count
-            }
-    
-    # カウント数でソート
-    sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
-    rating_stats = dict(sorted_ratings)
+    try:
+        for rating_value, rating_label in Review.RATING_CHOICES:
+            count = reviews.filter(rating=rating_value).count()
+            if count > 0:
+                rating_stats[rating_value] = {
+                    'label': rating_label,
+                    'count': count
+                }
+        
+        # カウント数でソート
+        sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+        rating_stats = dict(sorted_ratings)
+    except Exception as e:
+        print(f"Error building rating stats: {e}")
+        rating_stats = {}
     
     return render(request, 'reviews/store_detail.html', {
         'store': store, 
