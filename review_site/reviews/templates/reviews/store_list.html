@@ -3,7 +3,7 @@
 {% block content %}
     <h1>お店一覧</h1>
 
-    <div class="search-form">
+    <div class="search-form" style="margin-left: 150px;">
         <form method="get" action="{% url 'store_list' %}">
             <input type="text" name="q" class="search-input" placeholder="店名や住所で検索..." value="{{ query|default_if_none:'' }}">
             <button type="submit" class="search-button">検索</button>
@@ -14,7 +14,7 @@
     </div>
 
     {% if query %}
-        <p style="margin: 10px 0; color: #666;">
+        <p style="margin: 10px 0 10px 150px; color: #666;">
             「<strong>{{ query }}</strong>」の検索結果: {{ stores.count }}件
         </p>
     {% endif %}
