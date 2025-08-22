@@ -5,6 +5,24 @@ import base64
 import io
 from PIL import Image
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, verbose_name="ユーザー", on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField("自己紹介", blank=True, null=True, max_length=500)
+    avatar_data = models.TextField("プロフィール画像（Base64）", blank=True, null=True)
+    location = models.CharField("住所", max_length=100, blank=True, null=True)
+    birth_date = models.DateField("生年月日", blank=True, null=True)
+    created_at = models.DateTimeField("作成日", auto_now_add=True)
+    updated_at = models.DateTimeField("更新日", auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}のプロフィール"
+    
+    def get_avatar_url(self):
+        """Base64画像データをdata URLとして返す"""
+        if self.avatar_data:
+            return f"data:image/jpeg;base64,{self.avatar_data}"
+        return None
+
 # ... Storeモデルは変更なし ...
 class Store(models.Model):
     name = models.CharField("店名", max_length=100)

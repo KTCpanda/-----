@@ -4,8 +4,9 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Store, Review, Reaction
-from .forms import StoreForm, ReviewForm
+from django.contrib import messages
+from .models import Store, Review, Reaction, UserProfile
+from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm
 import base64
 import io
 from PIL import Image
@@ -219,3 +220,39 @@ def get_user_reaction(request, review_id):
         return JsonResponse({'user_reaction': user_reaction.reaction_type})
     else:
         return JsonResponse({'user_reaction': None})
+
+@login_required
+def profile_view(request):
+    """プロフィール表示・編集"""
+    # プロフィールが存在しない場合は作成
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        profile_form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        
+        if profile_form.is_valid():
+            # プロフィール画像の処理
+            if 'avatar' in request.FILES:
+                image_file = request.FILES['avatar']
+                img = Image.open(image_file)
+                img = img.convert('RGB')
+                
+                # 画像サイズを調整
+                img.thumbnail((300, 300))
+                
+                # Base64に変換
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=85)
+                img_data = base64.b64encode(buffer.getvalue()).decode()
+                profile.avatar_data = img_data
+            
+            profile_form.save()
+            messages.success(request, 'プロフィールが更新されました！')
+            return redirect('profile')
+    else:
+        profile_form = UserProfileForm(instance=profile)
+    
+    return render(request, 'reviews/profile.html', {
+        'profile_form': profile_form,
+        'profile': profile
+    })
