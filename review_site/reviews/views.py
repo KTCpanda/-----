@@ -112,6 +112,7 @@ def store_detail(request, store_id):
                     'count': count
                 }
         
+        
         # カウント数でソート
         sorted_ratings = sorted(rating_stats.items(), key=lambda x: x[1]['count'], reverse=True)
         rating_stats = dict(sorted_ratings)
