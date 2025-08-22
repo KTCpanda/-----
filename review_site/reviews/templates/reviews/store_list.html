@@ -8,7 +8,7 @@
             <input type="text" name="q" class="search-input" placeholder="店名や住所で検索..." value="{{ query|default_if_none:'' }}">
             <button type="submit" class="search-button">検索</button>
             {% if query %}
-                <a href="{% url 'store_list' %}" style="margin-left: 10px; color: #666; text-decoration: none;">✖ クリア</a>
+                <a href="{% url 'store_list' %}" style="margin-left: 10px; color: #666; text-decoration: none;">✖ 文字をリセット</a>
             {% endif %}
         </form>
     </div>
