@@ -4,6 +4,12 @@
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
         <h1>通知</h1>
         
+        {% if confirmation_message %}
+            <div style="margin-bottom: 15px; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724; text-align: center;">
+                <small>📋 {{ confirmation_message }} これらの通知は削除されました。</small>
+            </div>
+        {% endif %}
+        
         <div style="background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             {% for notification in notifications %}
                 <div style="padding: 15px; border-bottom: 1px solid #eee; {% if not notification.is_read %}background-color: #f8f9fa;{% endif %}">
@@ -33,6 +39,9 @@
             {% empty %}
                 <div style="padding: 40px; text-align: center; color: #666;">
                     <p>通知はありません。</p>
+                    <small style="color: #999; display: block; margin-top: 10px;">
+                        ※ 通知は一度確認すると自動的に削除されます
+                    </small>
                 </div>
             {% endfor %}
         </div>

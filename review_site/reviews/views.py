@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib import messages
-from .models import Store, Review, Reaction, UserProfile, Follow, Notification
-from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm
+from .models import Store, Review, Reaction, UserProfile, Follow, Notification, Tag
+from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm, TagForm
 import base64
 import io
 from PIL import Image
@@ -127,10 +127,87 @@ def store_new(request):
                 store.image_data = image_base64
             
             store.save()
+            form.save_m2m()  # ManyToManyフィールドを保存
             return redirect('store_list')
     else:
         form = StoreForm()
     return render(request, 'reviews/store_form.html', {'form': form})
+
+# タグ作成
+@login_required
+def tag_new(request):
+    if request.method == 'POST':
+        form = TagForm(request.POST)
+        if form.is_valid():
+            tag = form.save(commit=False)
+            tag.created_by = request.user
+            tag.save()
+            return redirect('tag_list')
+    else:
+        form = TagForm()
+    return render(request, 'reviews/tag_form.html', {'form': form})
+
+# タグ一覧
+@login_required
+def tag_list(request):
+    tags = Tag.objects.all().order_by('name')
+    return render(request, 'reviews/tag_list.html', {'tags': tags})
+
+# タグAPI（JSON）
+@login_required
+def tags_api(request):
+    tags = Tag.objects.all().order_by('name')
+    tags_data = [
+        {
+            'id': tag.id,
+            'name': tag.name,
+            'color': tag.color
+        }
+        for tag in tags
+    ]
+    return JsonResponse(tags_data, safe=False)
+
+# 店舗にタグを追加
+@login_required
+def add_tag_to_store(request, store_id):
+    if request.method == 'POST':
+        store = get_object_or_404(Store, id=store_id)
+        tag_id = request.POST.get('tag_id')
+        
+        if tag_id:
+            try:
+                tag = Tag.objects.get(id=tag_id)
+                store.tags.add(tag)
+                
+                # 現在のタグリストを返す
+                current_tags = [
+                    {
+                        'id': t.id,
+                        'name': t.name,
+                        'color': t.color
+                    }
+                    for t in store.tags.all()
+                ]
+                
+                return JsonResponse({
+                    'success': True,
+                    'tags': current_tags
+                })
+            except Tag.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'タグが見つかりません'
+                })
+        
+        return JsonResponse({
+            'success': False,
+            'message': 'タグIDが指定されていません'
+        })
+    
+    return JsonResponse({
+        'success': False,
+        'message': '無効なリクエストです'
+    })
 
 # ユーザー登録
 def signup(request):
@@ -395,11 +472,30 @@ def notifications_view(request):
     """通知一覧"""
     notifications = Notification.objects.filter(user=request.user)
     
-    # 通知を既読にする
-    notifications.filter(is_read=False).update(is_read=True)
+    # 未読通知があったかどうかを記録
+    had_unread = notifications.filter(is_read=False).exists()
+    
+    # 通知を既読にしてから削除する
+    if had_unread:
+        unread_notifications = notifications.filter(is_read=False)
+        unread_count = unread_notifications.count()
+        unread_notifications.update(is_read=True)
+        
+        # 既読になった通知を削除
+        notifications.filter(is_read=True).delete()
+        
+        # 確認メッセージを作成
+        confirmation_message = f"{unread_count}件の通知を確認しました。"
+    else:
+        confirmation_message = None
+    
+    # 削除後の通知一覧を取得（基本的に空になる）
+    remaining_notifications = Notification.objects.filter(user=request.user)
     
     return render(request, 'reviews/notifications.html', {
-        'notifications': notifications
+        'notifications': remaining_notifications,
+        'had_unread': had_unread,
+        'confirmation_message': confirmation_message
     })
 
 @login_required

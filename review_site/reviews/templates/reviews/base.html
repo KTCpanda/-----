@@ -14,6 +14,7 @@
             {% if user.is_authenticated %}
                 <span>こんにちは! {{ user.username }}さん</span>
                 <a href="{% url 'store_new' %}" class="nav-link">お店を登録</a>
+                <a href="{% url 'tag_list' %}" class="nav-link">タグ一覧</a>
         </div>
         <div class="nav-right">
                 <a href="{% url 'notifications' %}" class="nav-link" id="notifications-link">通知 <span id="notification-count"></span></a>
@@ -31,9 +32,149 @@
         </div>
     </nav>
     <hr>
-    <main>
+    
+    <!-- タグパネル -->
+    {% if user.is_authenticated %}
+    <div id="tag-panel" style="position: fixed; right: 0px; top: 50%; transform: translateY(-50%); width: 250px; background: white; border: 1px solid #ddd; border-radius: 8px 0 0 8px; box-shadow: -2px 0 10px rgba(0,0,0,0.1); z-index: 1000;">
+        <div style="padding: 15px;">
+            <h4 style="margin: 0 0 15px 0; text-align: center;">タグをドラッグ</h4>
+            <div id="tag-list">
+                <!-- タグがここに動的に読み込まれます -->
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="{% url 'tag_new' %}" style="color: #007bff; text-decoration: none; font-size: 12px;">+ 新しいタグを作成</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <main style="margin-right: 270px; padding: 20px;">
         {% block content %}
         {% endblock %}
     </main>
+    
+    {% if user.is_authenticated %}
+    <script>
+        // ページ読み込み時にタグを自動で読み込む
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTags();
+            setupDropZones();
+        });
+        
+        // タグを読み込む
+        function loadTags() {
+            fetch('/api/tags/')
+                .then(response => response.json())
+                .then(tags => {
+                    const tagList = document.getElementById('tag-list');
+                    tagList.innerHTML = '';
+                    tags.forEach(tag => {
+                        const tagElement = document.createElement('div');
+                        tagElement.className = 'draggable-tag';
+                        tagElement.draggable = true;
+                        tagElement.dataset.tagId = tag.id;
+                        tagElement.innerHTML = `
+                            <span style="background-color: ${tag.color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: block; text-align: center; cursor: grab; margin-bottom: 5px;">
+                                ${tag.name}
+                            </span>
+                        `;
+                        
+                        // ドラッグイベント
+                        tagElement.addEventListener('dragstart', function(e) {
+                            e.dataTransfer.setData('text/plain', tag.id);
+                            e.dataTransfer.setData('tag-name', tag.name);
+                            e.dataTransfer.setData('tag-color', tag.color);
+                            this.style.opacity = '0.5';
+                        });
+                        
+                        tagElement.addEventListener('dragend', function(e) {
+                            this.style.opacity = '1';
+                        });
+                        
+                        tagList.appendChild(tagElement);
+                    });
+                })
+                .catch(error => console.error('Error loading tags:', error));
+        }
+        
+        // 店舗にドロップエリアを設定
+        function setupDropZones() {
+            const storeCards = document.querySelectorAll('.store-card');
+            storeCards.forEach(function(card) {
+                card.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.backgroundColor = '#f0f8ff';
+                    this.style.border = '2px dashed #007bff';
+                });
+                
+                card.addEventListener('dragleave', function(e) {
+                    this.style.backgroundColor = '';
+                    this.style.border = '';
+                });
+                
+                card.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.backgroundColor = '';
+                    this.style.border = '';
+                    
+                    const tagId = e.dataTransfer.getData('text/plain');
+                    const tagName = e.dataTransfer.getData('tag-name');
+                    const tagColor = e.dataTransfer.getData('tag-color');
+                    const storeId = this.dataset.storeId;
+                    
+                    if (storeId && tagId) {
+                        addTagToStore(storeId, tagId, tagName, tagColor, this);
+                    }
+                });
+            });
+        }
+        
+        // 店舗にタグを追加
+        function addTagToStore(storeId, tagId, tagName, tagColor, storeElement) {
+            fetch(`/store/${storeId}/add-tag/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `tag_id=${tagId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // タグ表示エリアを更新
+                    updateStoreTagDisplay(storeElement, data.tags);
+                } else {
+                    alert('タグの追加に失敗しました: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error adding tag:', error);
+                alert('タグの追加中にエラーが発生しました');
+            });
+        }
+        
+        // 店舗のタグ表示を更新
+        function updateStoreTagDisplay(storeElement, tags) {
+            const tagContainer = storeElement.querySelector('.store-tags');
+            if (tagContainer) {
+                tagContainer.innerHTML = '';
+                if (tags.length > 0) {
+                    const tagLabel = document.createElement('span');
+                    tagLabel.style.cssText = 'color: #666; font-size: 14px; margin-right: 5px;';
+                    tagLabel.textContent = 'タグ:';
+                    tagContainer.appendChild(tagLabel);
+                    
+                    tags.forEach(tag => {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.style.cssText = `background-color: ${tag.color}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 5px;`;
+                        tagSpan.textContent = tag.name;
+                        tagContainer.appendChild(tagSpan);
+                    });
+                }
+            }
+        }
+    </script>
+    {% endif %}
 </body>
 </html>

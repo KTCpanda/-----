@@ -1,0 +1,64 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    <div style="max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h1>新しいタグを作成</h1>
+        
+        <form method="post" style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label for="{{ form.name.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 5px;">タグ名:</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div style="color: red; font-size: 14px; margin-top: 5px;">{{ form.name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="{{ form.color.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 5px;">色:</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                    {% for value, label in form.color.field.choices %}
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="color" value="{{ value }}" {% if form.color.value == value %}checked{% endif %} style="display: none;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: {{ value }}; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; transition: border-color 0.2s;" 
+                                 onclick="this.previousElementSibling.checked = true; updateSelection();">
+                                ✓
+                            </div>
+                            <span style="margin-left: 8px;">{{ label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if form.color.errors %}
+                    <div style="color: red; font-size: 14px; margin-top: 5px;">{{ form.color.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" style="background-color: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
+                    タグを作成
+                </button>
+                <a href="{% url 'tag_list' %}" style="margin-left: 15px; color: #666; text-decoration: none;">キャンセル</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function updateSelection() {
+            // 全ての色選択肢のボーダーをリセット
+            document.querySelectorAll('input[name="color"]').forEach(function(input) {
+                const colorDiv = input.nextElementSibling;
+                if (input.checked) {
+                    colorDiv.style.borderColor = '#333';
+                    colorDiv.style.transform = 'scale(1.1)';
+                } else {
+                    colorDiv.style.borderColor = 'transparent';
+                    colorDiv.style.transform = 'scale(1)';
+                }
+            });
+        }
+        
+        // ページ読み込み時に初期選択状態を更新
+        document.addEventListener('DOMContentLoaded', updateSelection);
+    </script>
+{% endblock %}

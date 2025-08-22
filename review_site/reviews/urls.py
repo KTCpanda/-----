@@ -13,6 +13,12 @@ urlpatterns = [
     # 店の登録ページ
     path('store/new/', views.store_new, name='store_new'),
     
+    # タグ機能
+    path('tag/new/', views.tag_new, name='tag_new'),
+    path('tags/', views.tag_list, name='tag_list'),
+    path('api/tags/', views.tags_api, name='tags_api'),
+    path('store/<int:store_id>/add-tag/', views.add_tag_to_store, name='add_tag_to_store'),
+    
     # 店の編集ページ
     path('store/<int:store_id>/edit/', views.store_edit, name='store_edit'),
 

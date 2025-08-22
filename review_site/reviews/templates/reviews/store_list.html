@@ -22,7 +22,7 @@
 
     {# --- あなたのデータベースの検索結果 --- #}
     {% for store in stores %}
-        <div class="store-card" style="display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+        <div class="store-card" data-store-id="{{ store.id }}" style="display: flex; align-items: center; margin-bottom: 15px; padding: 15px; border-bottom: 1px solid #eee; border-radius: 8px; transition: background-color 0.2s, border 0.2s;">
             
             {% if store.image_data %}
                 <img src="{{ store.get_image_url }}" alt="{{ store.name }}の画像" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-right: 20px;">
@@ -62,6 +62,18 @@
                         </div>
                     {% endif %}
                     登録者: {{ store.created_by.username }}
+                    
+                    {# --- タグ表示 --- #}
+                    <span class="store-tags" style="margin-left: 15px; display: flex; align-items: center; gap: 5px;">
+                        {% if store.tags.all %}
+                            <span style="color: #666; font-size: 14px;">タグ:</span>
+                            {% for tag in store.tags.all %}
+                                <span style="background-color: {{ tag.color }}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+                                    {{ tag.name }}
+                                </span>
+                            {% endfor %}
+                        {% endif %}
+                    </span>
                 </p>
             </div>
 

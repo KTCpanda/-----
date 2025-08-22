@@ -60,6 +60,7 @@ class Store(models.Model):
     address = models.CharField("住所", max_length=200)
     image_data = models.TextField("お店の画像（Base64）", blank=True, null=True)
     created_by = models.ForeignKey(User, verbose_name="登録者", on_delete=models.CASCADE)
+    tags = models.ManyToManyField('Tag', verbose_name="タグ", blank=True)
     created_at = models.DateTimeField("登録日", auto_now_add=True)
 
     def __str__(self):
@@ -70,6 +71,29 @@ class Store(models.Model):
         if self.image_data:
             return f"data:image/jpeg;base64,{self.image_data}"
         return None
+
+# タグモデル
+class Tag(models.Model):
+    COLOR_CHOICES = [
+        ('#FF6B6B', '赤'),
+        ('#4ECDC4', '青緑'),
+        ('#45B7D1', '青'),
+        ('#96CEB4', '緑'),
+        ('#FFEAA7', '黄'),
+        ('#DDA0DD', '紫'),
+        ('#F39C12', 'オレンジ'),
+        ('#E17055', '茶'),
+        ('#74B9FF', '水色'),
+        ('#FD79A8', 'ピンク'),
+    ]
+    
+    name = models.CharField("タグ名", max_length=50, unique=True)
+    color = models.CharField("色", max_length=7, choices=COLOR_CHOICES, default='#4ECDC4')
+    created_by = models.ForeignKey(User, verbose_name="作成者", on_delete=models.CASCADE)
+    created_at = models.DateTimeField("作成日", auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
 
 # reviews/models.py
 

@@ -20,6 +20,18 @@
             {% endif %}
             登録者: {{ store.created_by.username }}
         </a>
+        
+        {# --- タグ表示 --- #}
+        {% if store.tags.all %}
+            <span style="margin-left: 15px; display: flex; align-items: center; gap: 5px;">
+                <span style="color: #666; font-size: 14px;">タグ:</span>
+                {% for tag in store.tags.all %}
+                    <span style="background-color: {{ tag.color }}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                        {{ tag.name }}
+                    </span>
+                {% endfor %}
+            </span>
+        {% endif %}
     </p>
     
     {% if user == store.created_by %}

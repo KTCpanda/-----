@@ -1,7 +1,17 @@
 # reviews/forms.py
 from django import forms
 from django.contrib.auth.models import User
-from .models import Store, Review, UserProfile
+from .models import Store, Review, UserProfile, Tag
+
+# タグフォーム
+class TagForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ['name', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'タグ名を入力'}),
+            'color': forms.Select(attrs={'class': 'color-select'}),
+        }
 
 # ... StoreFormは変更なし ...
 class StoreForm(forms.ModelForm):
@@ -9,7 +19,16 @@ class StoreForm(forms.ModelForm):
     
     class Meta:
         model = Store
-        fields = ['name', 'address', 'image']
+        fields = ['name', 'address', 'tags', 'image']
+        widgets = {
+            'tags': forms.CheckboxSelectMultiple(),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # タグの選択肢を設定
+        self.fields['tags'].queryset = Tag.objects.all()
+        self.fields['tags'].required = False
 
 
 class ReviewForm(forms.ModelForm):
