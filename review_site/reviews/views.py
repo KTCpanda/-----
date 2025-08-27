@@ -266,6 +266,7 @@ def review_delete(request, review_id):
             
     # 条件に合わない場合は、元の店の詳細ページにリダイレクト
     return redirect('store_detail', store_id=review.store.id)
+# reviews/views.py
 
 @login_required
 def store_edit(request, store_id):
@@ -276,13 +277,13 @@ def store_edit(request, store_id):
         return redirect('store_detail', store_id=store.id)
     
     if request.method == 'POST':
-        form = StoreForm(request.POST, request.FILES)
+        form = StoreForm(request.POST, request.FILES, instance=store)
         if form.is_valid():
-            store.name = form.cleaned_data['name']
-            store.address = form.cleaned_data['address']
+            # form.save() でコメントを含む全てのフィールドが保存されます
+            store = form.save(commit=False)
             
-            # 新しい画像がアップロードされた場合
-            if form.cleaned_data['image']:
+            # 新しい画像がアップロードされた場合のみ画像データを更新
+            if form.cleaned_data.get('image'):
                 image_file = form.cleaned_data['image']
                 img = Image.open(image_file)
                 img = img.convert('RGB')
@@ -294,15 +295,18 @@ def store_edit(request, store_id):
                 store.image_data = image_base64
             
             store.save()
+            form.save_m2m()  # タグを保存
             return redirect('store_detail', store_id=store.id)
     else:
-        form = StoreForm(initial={'name': store.name, 'address': store.address})
+        form = StoreForm(instance=store)
     
     return render(request, 'reviews/store_form.html', {
         'form': form, 
         'store': store, 
         'is_edit': True
     })
+
+# ... (他のコード) ...
 
 @login_required
 def store_delete(request, store_id):
