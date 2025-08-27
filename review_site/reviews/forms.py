@@ -19,7 +19,7 @@ class StoreForm(forms.ModelForm):
     
     class Meta:
         model = Store
-        fields = ['name', 'address', 'tags', 'image', 'comment']
+        fields = ['name', 'address', 'tags', 'image', 'comment', 'website_url']
         widgets = {
             'tags': forms.CheckboxSelectMultiple(),
             'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': 'お店についてのコメントを入力...'}),

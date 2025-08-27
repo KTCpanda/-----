@@ -62,6 +62,7 @@ class Store(models.Model):
     created_by = models.ForeignKey(User, verbose_name="登録者", on_delete=models.CASCADE)
     tags = models.ManyToManyField('Tag', verbose_name="タグ", blank=True)
     comment = models.TextField("コメント", blank=True, null=True)
+    website_url = models.URLField("公式サイトURL", blank=True, null=True)
     created_at = models.DateTimeField("登録日", auto_now_add=True)
 
     def __str__(self):
