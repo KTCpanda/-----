@@ -21,17 +21,24 @@
     <div class="dm-messages" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
         {% for message in messages %}
             <div class="message {% if message.sender == user %}sent{% else %}received{% endif %}" 
-                 style="display: flex; flex-direction: column; max-width: 70%; align-self: {% if message.sender == user %}flex-end{% else %}flex-start{% endif %};">
+                 style="display: flex; flex-direction: column; max-width: 70%; align-self: {% if message.sender == user %}flex-end{% else %}flex-start{% endif %}; position: relative;">
                 
                 <div class="message-content" 
                      style="padding: 10px 15px; border-radius: 18px; 
                             background-color: {% if message.sender == user %}#007bff{% else %}#f1f1f1{% endif %}; 
                             color: {% if message.sender == user %}#fff{% else %}#333{% endif %};">
-                    {{ message.content }}
+                    <span id="message-text-{{ message.id }}">{{ message.content }}</span>
                 </div>
                 <small class="message-time" style="font-size: 12px; color: #888; margin-top: 5px; align-self: {% if message.sender == user %}flex-end{% else %}flex-start{% endif %};">
                     {{ message.created_at|date:"H:i" }}
                 </small>
+
+                {% if message.sender == user %}
+                <div class="message-actions">
+                    <button onclick="copyMessage('{{ message.id }}')">コピー</button>
+                    <a href="{% url 'delete_dm' message.id %}" class="delete-link">削除</a>
+                </div>
+                {% endif %}
             </div>
         {% empty %}
             <p style="text-align: center; color: #888; margin-top: 50px;">まだメッセージはありません。最初のメッセージを送りましょう！</p>
@@ -66,6 +73,65 @@
         background: #ccc;
         border-radius: 10px;
     }
+    .message.sent {
+        position: relative;
+    }
+    .message-actions {
+        /* display: none; を削除 */
+        opacity: 0;
+        visibility: hidden;
+        position: absolute;
+        top: 50%;
+        right: 100%; /* leftから変更 */
+        margin-right: 10px; /* メッセージとの間に余白を追加 */
+        transform: translateY(-50%);
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 10;
+        width: 75px; /* 幅を固定 */
+        transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+    }
+    .message.sent.show-actions .message-actions {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 0s;
+    }
+       .message-actions button {
+        padding: 5px 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        color: #333;
+        text-decoration: none;
+        display: block;
+    }
+    .message-actions a {
+        padding: 5px 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        color: #333;
+        text-decoration: none;
+        display: block;
+    }
+    .message-actions button:hover{
+         background-color: #f0f0f0;
+
+        text-decoration: none;
+    }
+    .message-actions a:hover {
+        background-color: #f0f0f0;
+
+        text-decoration: none;
+    }
+
+        
 </style>
 
 <script>
@@ -73,6 +139,52 @@
     document.addEventListener('DOMContentLoaded', function() {
         const messagesContainer = document.querySelector('.dm-messages');
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        const sentMessages = document.querySelectorAll('.message.sent');
+        let hideTimer;
+
+        sentMessages.forEach(message => {
+            const messageAndActions = message; // メッセージ全体をコンテナとする
+
+            const showActions = () => {
+                clearTimeout(hideTimer);
+                // 他のメッセージのアクションを隠す
+                sentMessages.forEach(m => {
+                    if (m !== message) {
+                        m.classList.remove('show-actions');
+                    }
+                });
+                message.classList.add('show-actions');
+            };
+
+            const startHideTimer = () => {
+                hideTimer = setTimeout(() => {
+                    message.classList.remove('show-actions');
+                }, 3000); // 3秒後に隠す
+            };
+
+            // マウスがメッセージまたはアクションエリアに入った時に表示
+            messageAndActions.addEventListener('mouseenter', showActions);
+            // マウスがメッセージとアクションエリアから出た時にタイマースタート
+            messageAndActions.addEventListener('mouseleave', startHideTimer);
+        });
+    });
+
+    function copyMessage(messageId) {
+        const text = document.getElementById('message-text-' + messageId).innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            alert('メッセージをコピーしました');
+        }, function(err) {
+            alert('メッセージのコピーに失敗しました');
+        });
+    }
+
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('delete-link')) {
+            if (!confirm('本当にこのメッセージを削除しますか？')) {
+                event.preventDefault();
+            }
+        }
     });
 </script>
 {% endblock %}

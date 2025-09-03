@@ -47,4 +47,5 @@ urlpatterns = [
 
     # DM機能
     path('dm/send/<int:user_id>/', views.send_dm, name='send_dm'),
+    path('dm/delete/<int:message_id>/', views.delete_dm, name='delete_dm'),
 ]

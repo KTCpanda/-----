@@ -624,3 +624,29 @@ def send_dm(request, user_id):
         'messages': messages,
         'form': form,
     })
+
+@login_required
+def delete_dm(request, message_id):
+    """DMを削除する"""
+    message = get_object_or_404(DirectMessage, id=message_id)
+
+    # メッセージの送信者でなければ削除できない
+    if message.sender != request.user:
+        messages.error(request, "このメッセージを削除する権限がありません。")
+        recipient = message.conversation.participants.exclude(id=request.user.id).first()
+        if recipient:
+            return redirect('send_dm', user_id=recipient.id)
+        else:
+            return redirect('user_list')
+
+    # 相手のユーザーIDをリダイレクト用に取得
+    recipient = message.conversation.participants.exclude(id=request.user.id).first()
+    recipient_id = recipient.id if recipient else None
+
+    message.delete()
+    messages.success(request, "メッセージを削除しました。")
+
+    if recipient_id:
+        return redirect('send_dm', user_id=recipient_id)
+    else:
+        return redirect('user_list')
