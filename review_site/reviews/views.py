@@ -560,3 +560,9 @@ def remove_tag_from_store(request, store_id):
         return JsonResponse({'success': False, 'message': 'タグが見つかりません'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+@login_required
+def user_list(request):
+    # 自分以外の全ユーザーを取得
+    users = User.objects.select_related('profile').exclude(id=request.user.id).order_by('username')
+    return render(request, 'reviews/user_list.html', {'users': users})

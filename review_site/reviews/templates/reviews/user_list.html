@@ -1,0 +1,32 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+    <h1 style="margin-bottom: 20px;">ユーザー一覧</h1>
+
+    <div class="user-list-container">
+        {% for user in users %}
+            <div class="store-card" style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff;">
+                
+                <!-- アイコン -->
+                <a href="{% url 'user_profile' user.id %}" style="flex-shrink: 0;">
+                    {% if user.profile and user.profile.get_avatar_url %}
+                        <img src="{{ user.profile.get_avatar_url }}" alt="{{ user.username }}のアイコン" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;">
+                    {% else %}
+                        <div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #aaa;">
+                            画像なし
+                        </div>
+                    {% endif %}
+                </a>
+                
+                <!-- ユーザー名 -->
+                <div style="flex-grow: 1;">
+                    <h2 style="margin: 0;">
+                        <a href="{% url 'user_profile' user.id %}" style="text-decoration: none; color: #007bff;">{{ user.username }}</a>
+                    </h2>
+                </div>
+            </div>
+        {% empty %}
+            <p>ユーザーがいません。</p>
+        {% endfor %}
+    </div>
+{% endblock %}

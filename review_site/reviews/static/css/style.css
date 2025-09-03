@@ -168,11 +168,6 @@ form p {
     border-color: #adb5bd;
 }
 
-.reaction-btn:active {
-    transform: scale(0.95);
-}
-
-/* 押された状態のリアクションボタン */
 .reaction-btn.active {
     background-color: #007bff;
     color: white;
@@ -201,4 +196,69 @@ form p {
     gap: 5px;
     min-width: 50px;
     justify-content: center;
+}
+
+/* ユーザー一覧ページ */
+.user-card-list {
+    display: flex;
+    flex-direction: column;
+   
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px;
+    border: 1px solid #e1e1e1;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.user-card:hover {
+    border-color: #c0c0c0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.user-card-avatar-link {
+    flex-shrink: 0;
+    margin-right: 20px;
+}
+
+.user-card-avatar {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+}
+
+.user-card-no-avatar {
+    width: 60px;
+    height: 60px;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.user-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-card-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.user-card-name:hover {
+    text-decoration: underline;
+}
+
+.user-card-bio {
+    margin: 0;
+    color: #555;
+    font-size: 0.9rem;
 }

@@ -41,4 +41,7 @@ urlpatterns = [
     path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
     path('notifications/', views.notifications_view, name='notifications'),
     path('api/notifications/count/', views.get_unread_notifications_count, name='unread_notifications_count'),
+    
+    # ユーザー一覧ページ
+    path('users/', views.user_list, name='user_list'),
 ]

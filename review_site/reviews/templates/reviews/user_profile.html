@@ -37,9 +37,9 @@
                     
                     <!-- フォローボタン -->
                     {% if user.is_authenticated and user != profile_user %}
-                        <button id="follow-btn" onclick="toggleFollow({{ profile_user.id }})" 
-                                style="padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
-                                       {% if is_friend %}background-color: #28a745; color: white;{% elif is_following %}background-color: #dc3545; color: white;{% else %}background-color: #007bff; color: white;{% endif %}">
+                        <button id="follow-btn" 
+                                class="follow-btn {% if is_friend %}friend{% elif is_following %}unfollow{% endif %}"
+                                onclick="toggleFollow({{ profile_user.id }})">
                             {% if is_friend %}👥 友達{% elif is_following %}フォロー解除{% else %}フォロー{% endif %}
                         </button>
                     {% endif %}
@@ -101,16 +101,20 @@
             .then(data => {
                 if (data.success) {
                     const followBtn = document.getElementById('follow-btn');
+                    const badgeContainer = document.querySelector('.followers-info');
+                    let friendBadge = document.querySelector('.friend-badge');
+
+                    // ボタンのクラスをリセット
+                    followBtn.classList.remove('friend', 'unfollow');
                     
-                    // ボタンの表示を更新
+                    // ボタンとバッジの表示を更新
                     if (data.is_friend) {
                         followBtn.textContent = '👥 友達';
-                        followBtn.style.backgroundColor = '#28a745';
+                        followBtn.classList.add('friend');
                         
-                        // 友達バッジを追加
-                        const badgeContainer = document.querySelector('.followers-info');
-                        if (!document.querySelector('.friend-badge')) {
-                            const friendBadge = document.createElement('span');
+                        // 友達バッジがなければ追加
+                        if (!friendBadge) {
+                            friendBadge = document.createElement('span');
                             friendBadge.className = 'friend-badge';
                             friendBadge.style.cssText = 'background-color: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;';
                             friendBadge.innerHTML = '👥 友達';
@@ -118,31 +122,28 @@
                         }
                     } else if (data.is_following) {
                         followBtn.textContent = 'フォロー解除';
-                        followBtn.style.backgroundColor = '#dc3545';
+                        followBtn.classList.add('unfollow');
                         
-                        // 友達バッジを削除
-                        const friendBadge = document.querySelector('.friend-badge');
+                        // 友達バッジがあれば削除
                         if (friendBadge) {
                             friendBadge.remove();
                         }
                     } else {
                         followBtn.textContent = 'フォロー';
-                        followBtn.style.backgroundColor = '#007bff';
                         
-                        // 友達バッジを削除
-                        const friendBadge = document.querySelector('.friend-badge');
+                        // 友達バッジがあれば削除
                         if (friendBadge) {
                             friendBadge.remove();
                         }
                     }
                     
                     // フォロワー数を更新
-                    const followersElement = document.querySelector('span strong');
-                    if (followersElement) {
-                        followersElement.textContent = data.followers_count;
+                    if (data.followers_count !== undefined) {
+                        const followersElement = document.querySelector('.followers-info span:first-child strong');
+                        if (followersElement) {
+                            followersElement.textContent = data.followers_count;
+                        }
                     }
-                    
-                    alert(data.message);
                 } else {
                     alert(data.message);
                 }

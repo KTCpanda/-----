@@ -15,6 +15,7 @@
                 <span>こんにちは! {{ user.username }}さん</span>
                 <a href="{% url 'store_new' %}" class="nav-link">お店を登録</a>
                 <a href="{% url 'tag_list' %}" class="nav-link">タグ一覧</a>
+                <a href="{% url 'user_list' %}" class="nav-link">ユーザー一覧</a>
         </div>
         <div class="nav-right">
                 <a href="{% url 'notifications' %}" class="nav-link" id="notifications-link">通知 <span id="notification-count"></span></a>
