@@ -44,4 +44,7 @@ urlpatterns = [
     
     # ユーザー一覧ページ
     path('users/', views.user_list, name='user_list'),
+
+    # DM機能
+    path('dm/send/<int:user_id>/', views.send_dm, name='send_dm'),
 ]

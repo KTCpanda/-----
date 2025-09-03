@@ -137,3 +137,37 @@ class Reaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username}が{self.review}に{self.get_reaction_type_display()}"
+
+class Conversation(models.Model):
+    """
+    ユーザー間の会話を表すモデル。
+    参加者を2人に限定する。
+    """
+    participants = models.ManyToManyField(User, related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        users = self.participants.all()
+        if users.count() == 2:
+            return f"Conversation between {users[0].username} and {users[1].username}"
+        return f"Conversation {self.id}"
+
+class DirectMessage(models.Model):
+    """
+    ダイレクトメッセージの内容を表すモデル。
+    """
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField("メッセージ内容")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"From {self.sender.username} at {self.created_at:%Y-%m-%d %H:%M}"

@@ -6,8 +6,9 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.db.models import Q, Count, Prefetch
 from django.contrib import messages
-from .models import Store, Review, Reaction, UserProfile, Follow, Notification, Tag
+from .models import Store, Review, Reaction, UserProfile, Follow, Notification, Tag, Conversation, DirectMessage
 from .forms import StoreForm, ReviewForm, UserProfileForm, UserForm, TagForm
+from .dm_forms import DirectMessageForm
 import base64
 import io
 from PIL import Image
@@ -585,3 +586,41 @@ def user_list(request):
         })
 
     return render(request, 'reviews/user_list.html', {'users_with_status': users_with_status})
+
+@login_required
+def send_dm(request, user_id):
+    """DMの会話画面とメッセージ送信"""
+    recipient = get_object_or_404(User, id=user_id)
+    
+    # 自分自身には送信できない
+    if recipient == request.user:
+        return redirect('user_list')
+
+    # 2人のユーザーを含む会話を取得または作成
+    conversation = Conversation.objects.filter(participants=request.user).filter(participants=recipient).first()
+    if not conversation:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, recipient)
+
+    if request.method == 'POST':
+        form = DirectMessageForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.conversation = conversation
+            message.sender = request.user
+            message.save()
+            # POST後は同じページにリダイレクトしてフォームの再送信を防ぐ
+            return redirect('send_dm', user_id=recipient.id)
+    else:
+        form = DirectMessageForm()
+
+    # 会話のメッセージを取得
+    messages = conversation.messages.all().order_by('created_at')
+
+    # テンプレートをレンダリング
+    return render(request, 'reviews/dm_conversation.html', {
+        'recipient': recipient,
+        'conversation': conversation,
+        'messages': messages,
+        'form': form,
+    })
