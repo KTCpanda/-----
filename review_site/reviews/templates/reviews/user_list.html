@@ -29,13 +29,11 @@
                 <!-- フォローボタン -->
                 <div style="margin-left: auto;">
                     {% if item.is_friend %}
-                        <span class="friend-badge" style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-                            👥 友達
-                        </span>
+                        <a href="{% url 'user_profile' user.id %}" class="btn" style="background-color: #28a745; color: white; text-decoration: none; padding: 5px 10px; border-radius: 20px;">👥 友達</a>
                     {% elif item.is_following %}
-                        <a href="{% url 'user_profile' user.id %}" class="btn" style="background-color: #ccc; color: #333; text-decoration: none; padding: 5px 10px; border-radius: 5px;">フォロー済み</a>
+                        <a href="{% url 'user_profile' user.id %}" class="btn" style="background-color: #ccc; color: #333; text-decoration: none; padding: 5px 10px; border-radius: 20px;">👤→ フォロー済み</a>
                     {% else %}
-                        <a href="{% url 'user_profile' user.id %}" class="btn btn-primary" style="background-color: #419dff; color: white; text-decoration: none; padding: 5px 10px; border-radius: 5px;">プロフィールを見る</a>
+                        <a href="{% url 'user_profile' user.id %}" class="btn btn-primary" style="background-color: #419dff; color: white; text-decoration: none; padding: 5px 10px; border-radius: 20px;">プロフィールを見る</a>
                     {% endif %}
                 </div>
             </div>
