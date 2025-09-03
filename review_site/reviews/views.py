@@ -564,5 +564,24 @@ def remove_tag_from_store(request, store_id):
 @login_required
 def user_list(request):
     # 自分以外の全ユーザーを取得
-    users = User.objects.select_related('profile').exclude(id=request.user.id).order_by('username')
-    return render(request, 'reviews/user_list.html', {'users': users})
+    all_users = User.objects.select_related('profile').exclude(id=request.user.id).order_by('username')
+    
+    # 現在のユーザーがフォローしているユーザーのIDリスト
+    following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+    
+    # 現在のユーザーをフォローしているユーザーのIDリスト
+    followers_ids = set(Follow.objects.filter(following=request.user).values_list('follower_id', flat=True))
+
+    users_with_status = []
+    for user in all_users:
+        is_following = user.id in following_ids
+        is_followed_by = user.id in followers_ids
+        is_friend = is_following and is_followed_by
+        
+        users_with_status.append({
+            'user': user,
+            'is_following': is_following,
+            'is_friend': is_friend,
+        })
+
+    return render(request, 'reviews/user_list.html', {'users_with_status': users_with_status})
