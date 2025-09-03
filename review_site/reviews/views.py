@@ -564,8 +564,8 @@ def remove_tag_from_store(request, store_id):
 
 @login_required
 def user_list(request):
-    # 全ユーザーを取得
-    all_users = User.objects.select_related('profile').order_by('username')
+    # 自分以外の全ユーザーを取得
+    all_users = User.objects.select_related('profile').exclude(id=request.user.id).order_by('username')
     
     # 現在のユーザーがフォローしているユーザーのIDリスト
     following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))

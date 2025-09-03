@@ -24,8 +24,6 @@ ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
 
 # --- アプリケーション定義 ---
 INSTALLED_APPS = [
-    'daphne',
-    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
