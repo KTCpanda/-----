@@ -24,6 +24,8 @@ ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1', 'localhost']
 
 # --- アプリケーション定義 ---
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,8 +34,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'reviews',
     'whitenoise.runserver_nostatic', # WhiteNoiseを追加
-    'cloudinary_storage',
     'cloudinary',
+    'cloudinary_storage',
 ]
 
 # --- ミドルウェア設定 ---
@@ -67,6 +69,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'review_site.wsgi.application'
+ASGI_APPLICATION = 'review_site.asgi.application'
 
 
 # --- データベース設定 ---
